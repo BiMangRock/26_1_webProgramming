@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>GG-Shorts 1차 검사 데모</title>
+    <style>
+        body { font-family: sans-serif; margin: 30px; }
+        section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        h2 { margin-top: 0; color: #333; }
+        .flex { display: flex; gap: 20px; }
+    </style>
+</head>
+<body>
+<h1>GG-Shorts 1차 검사 기능 시현</h1>
+
+<!-- 1. 유저 CRUD -->
+<section>
+    <h2>1. 유저 관리 (CRUD)</h2>
+    <div class="flex">
+        <div>
+            <h3>회원 가입 (Create)</h3>
+            <input id="regName" placeholder="사용자명">
+            <input id="regEmail" placeholder="이메일">
+            <button onclick="registerUser()">가입</button>
+        </div>
+        <div>
+            <h3>회원 조회 및 검증 (Read)</h3>
+            <input id="searchName" placeholder="사용자명 검색">
+            <button onclick="getUser()">조회</button>
+            <p id="userInfo"></p>
+        </div>
+    </div>
+</section>
+
+<!-- 2. 미디어 업로드 및 스트리밍 -->
+<section>
+    <h2>2. 미디어 관리 및 스트리밍 (CRUD + Streaming)</h2>
+    <div class="flex">
+        <div>
+            <h3>미디어 업로드 (Create)</h3>
+            <input id="mediaTitle" placeholder="제목"><br><br>
+            Type:
+            <select id="mediaType">
+                <option value="VIDEO">VIDEO (비디오)</option>
+                <option value="AUDIO">AUDIO (오디오)</option>
+            </select><br><br>
+            <input type="file" id="mediaFile"><br><br>
+            <button onclick="uploadMedia()">업로드</button>
+        </div>
+        <div>
+            <h3>미디어 목록 및 플레이어 (Read, Delete, Stream)</h3>
+            <button onclick="loadMediaList()">목록 새로고침</button>
+            <ul id="mediaList"></ul>
+
+            <h4>플레이어</h4>
+            <video id="videoPlayer" controls width="320" height="240" style="display:none;"></video>
+            <br>
+            <audio id="audioPlayer" controls style="display:none;"></audio>
+        </div>
+    </div>
+</section>
+
+<script>
+    const host = "http://localhost:8080";
+
+    // 유저 가입
+    async function registerUser() {
+        const username = document.getElementById('regName').value;
+        const email = document.getElementById('regEmail').value;
+        const res = await fetch(`${host}/api/users/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email })
+        });
+        if (res.ok) alert("가입 성공!");
+    }
+
+    // 유저 조회
+    async function getUser() {
+        const username = document.getElementById('searchName').value;
+        const res = await fetch(`${host}/api/users/${username}`);
+        const infoText = document.getElementById('userInfo');
+        if (res.ok) {
+            const user = await res.json();
+            infoText.innerText = `ID: ${user.id} / Name: ${user.username} / Email: ${user.email}`;
+        } else {
+            infoText.innerText = "사용자를 찾을 수 없습니다.";
+        }
+    }
+
+    // 미디어 업로드
+    async function uploadMedia() {
+        const title = document.getElementById('mediaTitle').value;
+        const type = document.getElementById('mediaType').value;
+        const fileInput = document.getElementById('mediaFile');
+
+        const formData = new FormData();
+        formData.append("title", title);
+        formData.append("type", type);
+        formData.append("file", fileInput.files[0]);
+
+        const res = await fetch(`${host}/api/media/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        if (res.ok) {
+            alert("업로드 성공!");
+            loadMediaList();
+        }
+    }
+
+    // 미디어 목록 불러오기
+    async function loadMediaList() {
+        const res = await fetch(`${host}/api/media`);
+        const list = await res.json();
+        const listEl = document.getElementById('mediaList');
+        listEl.innerHTML = "";
+
+        list.forEach(m => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                [${m.fileType}] ${m.title}
+                <button onclick="playMedia(${m.id}, '${m.fileType}')">재생</button>
+                <button onclick="deleteMedia(${m.id})">삭제</button>
+            `;
+            listEl.appendChild(li);
+        });
+    }
+
+    // 미디어 삭제
+    async function deleteMedia(id) {
+        await fetch(`${host}/api/media/${id}`, { method: 'DELETE' });
+        loadMediaList();
+    }
+
+    // 미디어 스트리밍 재생
+    function playMedia(id, type) {
+        const videoPlayer = document.getElementById('videoPlayer');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const streamUrl = `${host}/api/media/stream/${id}`;
+
+        if (type === "VIDEO") {
+            audioPlayer.style.display = "none";
+            audioPlayer.pause();
+
+            videoPlayer.src = streamUrl;
+            videoPlayer.style.display = "block";
+            videoPlayer.play();
+        } else {
+            videoPlayer.style.display = "none";
+            videoPlayer.pause();
+
+            audioPlayer.src = streamUrl;
+            audioPlayer.style.display = "block";
+            audioPlayer.play();
+        }
+    }
+
+    // 초기 목록 로드
+    loadMediaList();
+</script>
+</body>
+</html>
