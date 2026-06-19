@@ -33,17 +33,17 @@ data class User(
     @Id val id: Long? = null,
     val username: String,
     val email: String,
-    val password: String // 비밀번호 필드 추가
+    val password: String
 )
 
 @Table("media")
 data class Media(
     @Id val id: Long? = null,
     val title: String,
-    val fileType: String, // "VIDEO" or "AUDIO"
+    val fileType: String,
     val fileName: String,
     val contentType: String,
-    val uploadedBy: String // 업로더의 username 기록
+    val uploadedBy: String
 )
 
 // ==========================================
@@ -53,7 +53,10 @@ interface UserRepository : CoroutineCrudRepository<User, Long> {
     suspend fun findByUsername(username: String): User?
 }
 
-interface MediaRepository : CoroutineCrudRepository<Media, Long>
+interface MediaRepository : CoroutineCrudRepository<Media, Long> {
+    // 제목 중복 여부 확인을 위한 쿼리 메소드 추가
+    suspend fun findByTitle(title: String): Media?
+}
 
 // ==========================================
 // 3. SERVICE LAYER (Business Logic)
@@ -68,39 +71,70 @@ class UserService(private val userRepository: UserRepository) {
         val userToSave = existingUser.copy(
             username = updatedUser.username,
             email = updatedUser.email,
-            password = updatedUser.password // 비밀번호 수정도 반영
+            password = updatedUser.password
         )
         return userRepository.save(userToSave)
     }
+}
+
+// 업로드 처리 결과 표현용 클래스 정의
+sealed interface SaveMediaResult {
+    data class Success(val media: Media) : SaveMediaResult
+    object DuplicateTitle : SaveMediaResult
+}
+
+// 제목 수정 처리 결과 표현용 Enum
+enum class UpdateMediaResult {
+    SUCCESS, FORBIDDEN, NOT_FOUND
 }
 
 @Service
 class MediaService(private val mediaRepository: MediaRepository) {
     private val uploadDir = File("uploads").apply { if (!exists()) mkdirs() }
 
-    suspend fun saveMedia(title: String, fileType: String, filePart: FilePart, uploadedBy: String): Media {
-        val destination = File(uploadDir, filePart.filename())
+    suspend fun saveMedia(title: String, fileType: String, filePart: FilePart, uploadedBy: String): SaveMediaResult {
+        // [중복 검증] 동일한 제목의 미디어가 DB에 존재하는지 확인
+        val existing = mediaRepository.findByTitle(title)
+        if (existing != null) {
+            return SaveMediaResult.DuplicateTitle
+        }
+
+        // [덮어쓰기 방지] 물리 파일 저장 시 고유 타임스탬프를 조합하여 파일명 중복 충돌을 방지합니다.
+        val uniqueFileName = "${System.currentTimeMillis()}_${filePart.filename()}"
+        val destination = File(uploadDir, uniqueFileName)
         filePart.transferTo(destination).awaitSingleOrNull()
 
         val media = Media(
             title = title,
             fileType = fileType,
-            fileName = filePart.filename(),
+            fileName = uniqueFileName,
             contentType = filePart.headers().contentType?.toString() ?: "application/octet-stream",
-            uploadedBy = uploadedBy // 업로더 정보 저장
+            uploadedBy = uploadedBy
         )
-        return mediaRepository.save(media)
+        val saved = mediaRepository.save(media)
+        return SaveMediaResult.Success(saved)
     }
 
     suspend fun getAllMedia(): List<Media> = mediaRepository.findAll().toList()
 
     suspend fun getMediaById(id: Long): Media? = mediaRepository.findById(id)
 
-    // 삭제 처리 및 결과 Enum 정의
+    // [미디어 제목 수정 비즈니스 로직] 본인이 올렸거나 admin 권한을 가졌는지 검증 후 제목 수정
+    suspend fun updateMedia(id: Long, newTitle: String, requestor: String): UpdateMediaResult {
+        val media = mediaRepository.findById(id) ?: return UpdateMediaResult.NOT_FOUND
+
+        if (requestor != "admin" && media.uploadedBy != requestor) {
+            return UpdateMediaResult.FORBIDDEN
+        }
+
+        val updatedMedia = media.copy(title = newTitle)
+        mediaRepository.save(updatedMedia)
+        return UpdateMediaResult.SUCCESS
+    }
+
     suspend fun deleteMedia(id: Long, requestor: String): DeleteResult {
         val media = mediaRepository.findById(id) ?: return DeleteResult.NOT_FOUND
 
-        // 관리자 계정이거나 본인이 직접 올린 파일만 삭제할 수 있도록 제한
         if (requestor != "admin" && media.uploadedBy != requestor) {
             return DeleteResult.FORBIDDEN
         }
@@ -127,7 +161,6 @@ class GGShortsController(
 ) {
     private val log = LoggerFactory.getLogger(GGShortsController::class.java)
 
-    // [User - Create] 회원 가입
     @PostMapping("/api/users/signup")
     suspend fun signUp(@RequestBody user: User): ResponseEntity<User> {
         log.info("Sign up request: username=${user.username}, email=${user.email}")
@@ -135,40 +168,54 @@ class GGShortsController(
         return ResponseEntity.status(HttpStatus.CREATED).body(registered)
     }
 
-    // [User - Read] 회원 검색
     @GetMapping("/api/users/{username}")
     suspend fun findUser(@PathVariable username: String): ResponseEntity<User> {
         log.info("Search user request: username=$username")
         val user = userService.getByUsername(username)
-        // 비밀번호 확인 힌트 기능 구현을 위해 User 객체를 그대로 내려줍니다.
         return if (user != null) ResponseEntity.ok(user) else ResponseEntity.notFound().build()
     }
 
-    // [Media - Create] 미디어 파일 업로드 (uploader 추가 수신)
+    // [Media - Create] 업로드 컨트롤러 (중복 검사 분기 적용)
     @PostMapping("/api/media/upload", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     suspend fun uploadMedia(
         @RequestPart("title") title: String,
         @RequestPart("type") type: String,
         @RequestPart("file") filePart: FilePart,
-        @RequestPart("uploader") uploader: String // 업로드한 주체 수신
-    ): ResponseEntity<Media> {
+        @RequestPart("uploader") uploader: String
+    ): ResponseEntity<Any> {
         log.info("Media Upload request: title=$title, type=$type, filename=${filePart.filename()}, uploader=$uploader")
-        val savedMedia = mediaService.saveMedia(title, type, filePart, uploader)
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedMedia)
+        return when (val result = mediaService.saveMedia(title, type, filePart, uploader)) {
+            is SaveMediaResult.Success -> ResponseEntity.status(HttpStatus.CREATED).body(result.media)
+            is SaveMediaResult.DuplicateTitle -> ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(mapOf("message" to "이미 동일한 제목의 동영상이 존재합니다. 다른 이름을 사용해 주세요."))
+        }
     }
 
-    // [Media - Read] 전체 목록 조회
     @GetMapping("/api/media")
     suspend fun getMediaList(): List<Media> {
         log.info("Fetch media list request")
         return mediaService.getAllMedia()
     }
 
-    // [Media - Delete] 미디어 삭제 (요청자 아이디 requestor 검증)
+    // [Media - Update] 동영상 제목 수정 API 추가
+    @PutMapping("/api/media/{id}")
+    suspend fun updateMedia(
+        @PathVariable id: Long,
+        @RequestParam("title") title: String,
+        @RequestParam("username") username: String
+    ): ResponseEntity<Void> {
+        log.info("Update media title request: id=$id, newTitle=$title, requestedBy=$username")
+        return when (mediaService.updateMedia(id, title, username)) {
+            UpdateMediaResult.SUCCESS -> ResponseEntity.ok().build()
+            UpdateMediaResult.FORBIDDEN -> ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+            UpdateMediaResult.NOT_FOUND -> ResponseEntity.notFound().build()
+        }
+    }
+
     @DeleteMapping("/api/media/{id}")
     suspend fun deleteMedia(
         @PathVariable id: Long,
-        @RequestParam("username") username: String // 삭제를 요청한 주체의 username 파라미터 수신
+        @RequestParam("username") username: String
     ): ResponseEntity<Void> {
         log.info("Delete media request: id=$id, requestedBy=$username")
         return when (mediaService.deleteMedia(id, username)) {
@@ -178,7 +225,6 @@ class GGShortsController(
         }
     }
 
-    // [Media - Stream] 비동기 스트리밍
     @GetMapping("/api/media/stream/{id}")
     suspend fun streamMedia(@PathVariable id: Long): ResponseEntity<Resource> {
         val media = mediaService.getMediaById(id) ?: return ResponseEntity.notFound().build()
@@ -197,7 +243,6 @@ class GGShortsController(
             .body(resource)
     }
 
-    // [User - Update] 회원 정보 수정
     @PutMapping("/api/users/{id}")
     suspend fun updateUser(
         @PathVariable id: Long,

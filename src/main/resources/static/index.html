@@ -20,17 +20,15 @@
 <section>
     <h2>0. 로그인 및 디버깅 도구</h2>
     <div id="loginStatus" class="auth-bar">
-        로그인이 필요합니다. (비로그인 상태에서는 업로드/삭제가 제한됩니다)
+        로그인이 필요합니다. (비로그인 상태에서는 업로드/수정/삭제가 제한됩니다)
     </div>
     <div class="flex">
-        <!-- 로그인 구역 -->
         <div>
             <h3>로그인</h3>
             <input id="loginName" placeholder="사용자명">
             <input id="loginPassword" type="password" placeholder="비밀번호">
             <button onclick="login()">로그인</button>
         </div>
-        <!-- 비밀번호 디버깅 힌트 구역 -->
         <div>
             <h3>디버깅용 비밀번호 힌트</h3>
             <input id="hintName" placeholder="조회할 사용자명">
@@ -43,7 +41,6 @@
 <section>
     <h2>1. 유저 관리 (CRUD)</h2>
     <div class="flex">
-        <!-- C (Create) -->
         <div>
             <h3>회원 가입 (Create)</h3>
             <input id="regName" placeholder="사용자명">
@@ -51,14 +48,12 @@
             <input id="regPassword" type="password" placeholder="비밀번호">
             <button onclick="registerUser()">가입</button>
         </div>
-        <!-- R (Read) -->
         <div>
             <h3>회원 조회 및 검증 (Read)</h3>
             <input id="searchName" placeholder="사용자명 검색">
             <button onclick="getUser()">조회</button>
             <p id="userInfo"></p>
         </div>
-        <!-- U (Update) -->
         <div>
             <h3>회원 정보 수정 (Update)</h3>
             <input id="updateId" placeholder="회원 ID (조회 시 자동입력)" readonly style="background-color: #eee;">
@@ -86,7 +81,7 @@
             <button onclick="uploadMedia()">업로드</button>
         </div>
         <div>
-            <h3>미디어 목록 및 플레이어 (Read, Delete, Stream)</h3>
+            <h3>미디어 목록 및 플레이어 (Read, Update, Delete, Stream)</h3>
             <button onclick="loadMediaList()">목록 새로고침</button>
             <ul id="mediaList"></ul>
 
@@ -100,9 +95,9 @@
 
 <script>
     const host = "http://localhost:8080";
-    let loggedInUser = null; // 현재 브라우저 세션에 로그인한 사용자 상태 기록
+    let loggedInUser = null;
 
-    // [0] 로그인 기능 구현
+    // 로그인 처리
     async function login() {
         const username = document.getElementById('loginName').value;
         const password = document.getElementById('loginPassword').value;
@@ -112,7 +107,6 @@
             return;
         }
 
-        // admin 계정은 데이터베이스에 없어도 임시로 바로 우회 로그인될 수 있게 배려
         if (username === "admin" && password === "admin") {
             loggedInUser = "admin";
             updateLoginState();
@@ -135,25 +129,22 @@
         }
     }
 
-    // 로그아웃
     function logout() {
         loggedInUser = null;
         updateLoginState();
         alert("로그아웃 되었습니다.");
     }
 
-    // 로그인 인터페이스 동적 변경
     function updateLoginState() {
         const statusEl = document.getElementById('loginStatus');
         if (loggedInUser) {
             statusEl.innerHTML = `현재 로그인 사용자: <span style="color: green;">${loggedInUser}</span>
                                  <button onclick="logout()" style="margin-left: 10px;">로그아웃</button>`;
         } else {
-            statusEl.innerHTML = `로그인이 필요합니다. (비로그인 상태에서는 업로드/삭제가 제한됩니다)`;
+            statusEl.innerHTML = `로그인이 필요합니다. (비로그인 상태에서는 업로드/수정/삭제가 제한됩니다)`;
         }
     }
 
-    // 디버깅 힌트 조회 (API를 찔러 사용자의 비밀번호 획득)
     async function getPasswordHint() {
         const username = document.getElementById('hintName').value;
         if (!username) {
@@ -245,10 +236,10 @@
         }
     }
 
-    // [C] 미디어 업로드 (Create)
+    // [C] 미디어 업로드 (중복 검사 에러 대응 포함)
     async function uploadMedia() {
         if (!loggedInUser) {
-            alert("로그인 세션이 존재하지 않습니다. 먼저 로그인해 주세요.");
+            alert("업로드 작업을 진행하려면 로그인이 필요합니다.");
             return;
         }
 
@@ -265,18 +256,24 @@
         formData.append("title", title);
         formData.append("type", type);
         formData.append("file", fileInput.files[0]);
-        // 업로드 파일 전송 시 로그인된 사용자의 ID를 함께 담아서 보냅니다.
         formData.append("uploader", loggedInUser);
 
         const res = await fetch(`${host}/api/media/upload`, {
             method: 'POST',
             body: formData
         });
+
         if (res.ok) {
             alert("업로드 성공!");
             document.getElementById('mediaTitle').value = "";
             fileInput.value = "";
             loadMediaList();
+        } else if (res.status === 409) {
+            // 서버에서 중복 예외로 차단된 경우 안내메세지 출력
+            const errorResult = await res.json();
+            alert(errorResult.message);
+        } else {
+            alert("업로드 실패!");
         }
     }
 
@@ -289,17 +286,48 @@
 
         list.forEach(m => {
             const li = document.createElement('li');
-            // 어떤 사용자가 올린 파일인지 UI에 꼬리표를 표출합니다.
             li.innerHTML = `
-                [${m.fileType}] ${m.title} <span style="font-size: 0.85em; color: gray;">(업로더: ${m.uploadedBy})</span>
+                [${m.fileType}] <strong id="title-text-${m.id}">${m.title}</strong>
+                <span style="font-size: 0.85em; color: gray;">(업로더: ${m.uploadedBy})</span>
                 <button onclick="playMedia(${m.id}, '${m.fileType}')">재생</button>
+                <button onclick="editMediaTitle(${m.id}, '${m.title}')">이름 수정</button>
                 <button onclick="deleteMedia(${m.id})">삭제</button>
             `;
             listEl.appendChild(li);
         });
     }
 
-    // [D] 미디어 삭제 (Delete - 현재 로그인된 사용자 검증 수행)
+    // [U] 동영상 이름(제목) 수정 함수 추가
+    async function editMediaTitle(id, currentTitle) {
+        if (!loggedInUser) {
+            alert("수정 작업을 진행하려면 로그인이 필요합니다.");
+            return;
+        }
+
+        const newTitle = prompt("변경하고자 하는 새로운 동영상 제목을 입력하세요:", currentTitle);
+        if (newTitle === null) return; // 취소한 경우 중단
+
+        const trimmedTitle = newTitle.trim();
+        if (trimmedTitle === "") {
+            alert("공백 제목으로는 수정할 수 없습니다.");
+            return;
+        }
+
+        const res = await fetch(`${host}/api/media/${id}?title=${encodeURIComponent(trimmedTitle)}&username=${loggedInUser}`, {
+            method: 'PUT'
+        });
+
+        if (res.ok) {
+            alert("동영상 제목이 변경되었습니다.");
+            loadMediaList();
+        } else if (res.status === 403) {
+            alert("수정 권한이 없습니다. (본인이 올린 동영상이거나 admin 계정만 수정 가능합니다)");
+        } else {
+            alert("동영상 제목 수정에 실패했습니다.");
+        }
+    }
+
+    // [D] 미디어 삭제
     async function deleteMedia(id) {
         if (!loggedInUser) {
             alert("삭제 작업을 진행하려면 로그인이 필요합니다.");
