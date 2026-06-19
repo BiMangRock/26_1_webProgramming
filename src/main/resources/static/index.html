@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>GG-Shorts 1차 검사 데모</title>
+    <!-- 💡 두 번째 이미지처럼 브라우저 탭 이름을 "GG-SHORTS"로 보이게 설정합니다 -->
+    <title>GG-SHORTS</title>
     <style>
         body { font-family: sans-serif; margin: 30px; background-color: #fcfcfc; }
         section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; background: white; }
@@ -17,7 +18,7 @@
         .screen { display: none; }
 
         /* --------------------------------------------------
-           [로그인 화면 스타일 - 손그림 스케치 재현]
+           [로그인 화면 스타일 - OP.GG 스타일 로고 추가]
            -------------------------------------------------- */
         .login-outer {
             display: flex;
@@ -27,19 +28,33 @@
         }
         .login-container {
             width: 400px;
-            height: 280px;
+            height: 310px; /* 로고가 추가되었으므로 세로 길이를 280px에서 310px로 늘려줍니다 */
             border: 1px solid #999;
             border-radius: 10px;
             padding: 40px;
-            position: relative; /* 우측 하단 절대 배치용 */
+            position: relative;
             background-color: white;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
+
+        /* OP.GG처럼 굵고 강렬한 느낌의 대문자 로고 스타일링 */
+        .login-logo {
+            text-align: center;
+            font-size: 34px;
+            font-weight: 900;
+            color: #1f1f1f;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+            font-family: 'Arial Black', Impact, sans-serif;
+        }
+
         .login-container h2 {
             text-align: center;
-            margin-bottom: 40px;
-            font-size: 24px;
-            letter-spacing: 2px;
+            margin-bottom: 35px; /* 여백 조정 */
+            font-size: 15px;      /* 로고가 돋보이도록 기존 24px에서 축소 */
+            color: #666;
+            font-weight: normal;
+            letter-spacing: 0px;
         }
         .input-row {
             display: flex;
@@ -158,12 +173,15 @@
 <body>
 
 <!-- ==================================================
-     1. 로그인 화면 (Screen 1 - 스케치 디자인)
+     1. 로그인 화면 (Screen 1 - OP.GG 감성 로고 추가)
      ================================================== -->
 <div id="loginScreen" class="screen">
     <div class="login-outer">
         <div class="login-container">
+            <!-- 💡 웹페이지의 이름(로고)이 가장 먼저 눈에 띄도록 추가된 영역입니다 -->
+            <div class="login-logo">GG-SHORTS</div>
             <h2>로그인</h2>
+
             <div class="input-row">
                 <label for="loginName">아이디</label>
                 <input id="loginName" type="text" placeholder="아이디 입력">
@@ -304,7 +322,7 @@
         panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
     }
 
-    // 초기 실행 시 로그인 화면이 나오도록 설정 [1]
+    // 초기 실행 시 로그인 화면이 나오도록 설정
     showScreen('loginScreen');
 
     // --------------------------------------------------
