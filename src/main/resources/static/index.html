@@ -2,9 +2,10 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <!-- 💡 두 번째 이미지처럼 브라우저 탭 이름을 "GG-SHORTS"로 보이게 설정합니다 -->
+    <!-- 💡 브라우저의 탭 영역 제목을 설정함 -->
     <title>GG-SHORTS</title>
     <style>
+        /* [전역 기본 레이아웃 구성 스타일링] */
         body { font-family: sans-serif; margin: 30px; background-color: #fcfcfc; }
         section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; background: white; }
         h2 { margin-top: 0; color: #333; }
@@ -12,14 +13,10 @@
         input { margin-bottom: 5px; display: block; }
         button { cursor: pointer; }
 
-        /* --------------------------------------------------
-           [화면 전환용 CSS]
-           -------------------------------------------------- */
+        /* [화면 간 전환용 동적 디스플레이 스타일 정의] */
         .screen { display: none; }
 
-        /* --------------------------------------------------
-           [로그인 화면 스타일 - OP.GG 스타일 로고 추가]
-           -------------------------------------------------- */
+        /* [로그인 인터페이스 컨테이너 레이아웃] */
         .login-outer {
             display: flex;
             justify-content: center;
@@ -28,7 +25,7 @@
         }
         .login-container {
             width: 400px;
-            height: 310px; /* 로고가 추가되었으므로 세로 길이를 280px에서 310px로 늘려줍니다 */
+            height: 310px; /* OP.GG 로고 수용을 위해 규격 확장함 */
             border: 1px solid #999;
             border-radius: 10px;
             padding: 40px;
@@ -37,7 +34,7 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
 
-        /* OP.GG처럼 굵고 강렬한 느낌의 대문자 로고 스타일링 */
+        /* OP.GG 특유의 강렬하고 정돈된 로고 스타일 장식 */
         .login-logo {
             text-align: center;
             font-size: 34px;
@@ -50,8 +47,8 @@
 
         .login-container h2 {
             text-align: center;
-            margin-bottom: 35px; /* 여백 조정 */
-            font-size: 15px;      /* 로고가 돋보이도록 기존 24px에서 축소 */
+            margin-bottom: 35px;
+            font-size: 15px;
             color: #666;
             font-weight: normal;
             letter-spacing: 0px;
@@ -84,13 +81,13 @@
             border-radius: 4px;
             font-size: 14px;
         }
-        /* 스케치 우측 하단 동그란 신규 가입 버튼 구현 */
+        /* 우하단 신규 가입 전송을 위한 둥근 시그널 버튼 배치 */
         .signup-trigger-btn {
             position: absolute;
             bottom: 25px;
             right: 25px;
             border: 1.5px solid #222;
-            border-radius: 25px; /* 원/타원형 형태 제공 */
+            border-radius: 25px;
             padding: 8px 16px;
             background-color: white;
             font-size: 13px;
@@ -104,9 +101,7 @@
             background-color: #eee;
         }
 
-        /* --------------------------------------------------
-           [회원가입 화면 스타일]
-           -------------------------------------------------- */
+        /* [회원가입 레이아웃 스타일 설정] */
         .signup-container {
             width: 380px;
             margin: 100px auto;
@@ -148,9 +143,7 @@
             font-weight: bold;
         }
 
-        /* --------------------------------------------------
-           [메인 대시보드 화면 스타일]
-           -------------------------------------------------- */
+        /* [메인 로그인 성공 후 작업 상단 제어 바] */
         .auth-bar {
             background-color: #f0f0f0;
             padding: 12px 20px;
@@ -173,12 +166,12 @@
 <body>
 
 <!-- ==================================================
-     1. 로그인 화면 (Screen 1 - OP.GG 감성 로고 추가)
+     1. 로그인 화면 컨테이너 (Screen 1)
      ================================================== -->
 <div id="loginScreen" class="screen">
     <div class="login-outer">
         <div class="login-container">
-            <!-- 💡 웹페이지의 이름(로고)이 가장 먼저 눈에 띄도록 추가된 영역입니다 -->
+            <!-- OP.GG 스타일을 적용한 메인 로고 영역임 -->
             <div class="login-logo">GG-SHORTS</div>
             <h2>로그인</h2>
 
@@ -192,12 +185,12 @@
             </div>
             <button class="login-submit-btn" onclick="login()">로그인</button>
 
-            <!-- 신규 회원 가입 버튼 (우측 하단 타원 형태) -->
+            <!-- 클릭 시 회원가입 패널로 시선을 이동시키는 변환 트리거임 -->
             <button class="signup-trigger-btn" onclick="goToSignup()">신규회원 가입!</button>
         </div>
     </div>
 
-    <!-- 디버깅을 돕기 위한 보조 비밀번호 힌트 제공 수단 (화면 하단 작게 배치) -->
+    <!-- 개발 프로세스를 보조하기 위한 비밀번호 힌트 제공 영역임 -->
     <div style="text-align: center; margin-top: -50px;">
         <span style="font-size: 12px; color: #888;">[디버그 도구] 비밀번호를 잊으셨나요? </span>
         <input id="hintName" placeholder="아이디 입력" style="display:inline-block; width:100px; padding:3px; font-size:12px;">
@@ -206,7 +199,7 @@
 </div>
 
 <!-- ==================================================
-     2. 신규 회원가입 화면 (Screen 2)
+     2. 회원가입 화면 컨테이너 (Screen 2)
      ================================================== -->
 <div id="signupScreen" class="screen">
     <div class="signup-container">
@@ -224,25 +217,26 @@
 </div>
 
 <!-- ==================================================
-     3. 메인 서비스 화면 (Screen 3 - 로그인 성공 후 진입)
+     3. 메인 서비스 및 미디어 컨트롤 화면 (Screen 3)
      ================================================== -->
 <div id="mainScreen" class="screen">
+    <!-- 로그인 유저 식별 표시 및 자발적 탈퇴 / 로그아웃 제어 인터페이스 -->
     <div class="auth-bar">
         <div>
             현재 로그인 사용자: <span style="color: blue; font-size: 1.1em;">[ <strong id="currentUserDisplay"></strong> ]</span>
         </div>
         <div>
-            <!-- 💡 본인 스스로 탈퇴할 수 있는 회원 탈퇴 버튼 추가 -->
+            <!-- 로그인 사용자 본인의 권한을 스스로 영구 파기/탈퇴처리 시키는 액션 버튼임 -->
             <button onclick="withdrawSelf()" style="padding: 5px 15px; background-color: #dc3545; color: white; border: none; border-radius: 4px; margin-right: 5px;">회원 탈퇴</button>
             <button onclick="logout()" style="padding: 5px 15px;">로그아웃</button>
         </div>
     </div>
 
-    <!-- 미디어 관리 및 스트리밍 섹션 -->
+    <!-- 미디어 업로드 및 리스트 탐색/플레이 공간 -->
     <section>
         <h2>미디어 관리 및 스트리밍 (CRUD + Streaming)</h2>
         <div class="flex">
-            <!-- 업로드 폼 -->
+            <!-- 신규 미디어 멀티파트 폼 업로드 영역 (Create) -->
             <div style="flex: 1;">
                 <h3>미디어 업로드 (Create)</h3>
                 <input id="mediaTitle" placeholder="동영상 제목"><br>
@@ -254,7 +248,7 @@
                 <input type="file" id="mediaFile"><br><br>
                 <button onclick="uploadMedia()" style="padding: 8px 20px; font-weight:bold;">업로드</button>
             </div>
-            <!-- 리스트 및 플레이어 -->
+            <!-- 수집된 미디어들의 실시간 목록화 및 선택 뷰어 재생 영역 (Read) -->
             <div style="flex: 1;">
                 <h3>미디어 목록 및 플레이어</h3>
                 <button onclick="loadMediaList()" style="padding: 5px 10px; margin-bottom: 10px;">목록 새로고침</button>
@@ -268,22 +262,25 @@
         </div>
     </section>
 
-    <!-- [디버깅 도구] 기존의 회원 수정/조회 패널 (평소엔 가려놓거나 필요시 사용) -->
+    <!-- [회원 데이터 다이렉트 디버깅 제어 패널 트리거] -->
     <div style="margin-top: 30px; text-align: right;">
         <button onclick="toggleDebugPanel()" style="font-size: 12px; background: none; border: 1px dashed red; color: red; padding: 5px;">
             [디버그용] 회원 전체 관리 패널 토글
         </button>
     </div>
 
+    <!-- DB 유저 정보의 상태를 추적하고 직접 소멸/갱신하기 위한 비상 백오피스 영역임 -->
     <div id="debugPanel" class="debug-panel" style="display: none;">
         <h3 style="color: red; margin-top:0;">유저 정보 관리 (CRUD 백업)</h3>
         <div class="flex">
+            <!-- 가입 유저 명칭 조회 및 폼 채우기 장치 (Read) -->
             <div>
                 <h4>회원 조회 및 검증 (Read)</h4>
                 <input id="searchName" placeholder="사용자명 검색">
                 <button onclick="getUser()">조회</button>
                 <p id="userInfo"></p>
             </div>
+            <!-- 조회된 가입 데이터의 내용을 변경 및 수정(Update), 무력 강제탈퇴(Delete) 시키는 수단 -->
             <div>
                 <h4>회원 정보 수정 (Update)</h4>
                 <input id="updateId" placeholder="회원 ID" readonly style="background-color: #eee;">
@@ -291,7 +288,7 @@
                 <input id="updateEmail" placeholder="새 이메일">
                 <input id="updatePassword" type="password" placeholder="새 비밀번호">
                 <button onclick="updateUser()">수정</button>
-                <!-- 💡 관리자 전용 회원 강제 삭제 버튼 추가 -->
+                <!-- 💡 관리자 "admin" 계정이 위임받아 타인을 강제 배출시키는 단추임 -->
                 <button onclick="deleteUserByAdmin()" style="background-color: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 10px; margin-left: 5px;">관리자 권한으로 삭제</button>
             </div>
         </div>
@@ -299,42 +296,53 @@
 </div>
 
 <script>
+    /**
+     * [글로벌 환경 변수 구성]
+     * host: 백엔드 서버가 대기 중인 대상 포트 엔드포인트 도메인임.
+     * loggedInUser: 현재 클라이언트 세션을 선점하여 지배 중인 유저의 사용자명임.
+     * loggedInUserId: DB 내 해당 가입 주체의 고유 일련번호(PK)를 식별 및 캐싱해 두는 장소임.
+     */
     const host = "http://localhost:8080";
     let loggedInUser = null;
-    let loggedInUserId = null; // 💡 로그인 시 유저 고유 DB ID 값을 보존하는 용도 추가
+    let loggedInUserId = null;
 
-    // --------------------------------------------------
-    // [화면 제어 로직 (View Switcher)]
-    // --------------------------------------------------
+    /**
+     * [동적 뷰 스크린 전환 알고리즘]
+     * 화면 상의 불필요한 단락(screen 클래스)들을 전부 숨긴 후, 목표 요소 하나만 골라 블록 활성화함.
+     *
+     * @param {string} screenId 시현을 원하는 HTML 노드의 고유 아이디임.
+     */
     function showScreen(screenId) {
-        // 모든 스크린 숨기기
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('signupScreen').style.display = 'none';
         document.getElementById('mainScreen').style.display = 'none';
 
-        // 대상 스크린만 출력
         document.getElementById(screenId).style.display = 'block';
     }
 
+    /** [가입 화면으로 전환] */
     function goToSignup() {
         showScreen('signupScreen');
     }
 
+    /** [로그인 화면으로 전환] */
     function goToLogin() {
         showScreen('loginScreen');
     }
 
+    /** [디버그 전용 백오피스 보조 판넬 숨김/시현 토글] */
     function toggleDebugPanel() {
         const panel = document.getElementById('debugPanel');
         panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
     }
 
-    // 초기 실행 시 로그인 화면이 나오도록 설정
+    // 문서가 처음 브라우저에 로드될 때 로그인 화면을 기본 뷰로 지정함.
     showScreen('loginScreen');
 
-    // --------------------------------------------------
-    // [로그인 및 권한 관리 관련 스크립트]
-    // --------------------------------------------------
+    /**
+     * [인증 확인 및 사용자 진입 검사 함수]
+     * 관리자 'admin' 계정의 우회 접근 처리 및 일반 회원 일치 여부를 비동기 REST API 호출을 통해 판단함.
+     */
     async function login() {
         const username = document.getElementById('loginName').value;
         const password = document.getElementById('loginPassword').value;
@@ -344,48 +352,58 @@
             return;
         }
 
-        // admin 계정 우회 로그인 제공
+        // [행동 규칙 가드] 관리자 admin 검진 시 백엔드 조회 생략 후 가상 식별자로 우회 연산함.
         if (username === "admin" && password === "admin") {
             loggedInUser = "admin";
-            loggedInUserId = 0; // admin은 가상 계정이므로 임의 ID로 설정
+            loggedInUserId = 0;
             loginSuccess();
             alert("관리자(admin) 권한으로 로그인 되었습니다.");
             return;
         }
 
-        const res = await fetch(`${host}/api/users/${username}`);
-        if (res.ok) {
-            const user = await res.json();
-            if (user.password === password) {
-                loggedInUser = user.username;
-                loggedInUserId = user.id; // 💡 로그인 성공 시 DB 고유 ID를 보존
-                loginSuccess();
-                alert(`${loggedInUser}님 환영합니다!`);
+        try {
+            const res = await fetch(`${host}/api/users/${username}`);
+            if (res.ok) {
+                const user = await res.json();
+                // [인증 검사 알고리즘] 받아온 비밀번호 데이터가 유저 입력값과 정밀 매칭하는지 확인정리함.
+                if (user.password === password) {
+                    loggedInUser = user.username;
+                    loggedInUserId = user.id;
+                    loginSuccess();
+                    alert(`${loggedInUser}님 환영합니다!`);
+                } else {
+                    alert("비밀번호가 일치하지 않습니다.");
+                }
             } else {
-                alert("비밀번호가 일치하지 않습니다.");
+                alert("존재하지 않는 사용자명입니다.");
             }
-        } else {
-            alert("존재하지 않는 사용자명입니다.");
+        } catch (e) {
+            alert("서버 연결에 실패하였음. 연결 포트를 검사할 것.");
         }
     }
 
+    /**
+     * [로그인 인가 확정 이후 화면 정리]
+     * 상단 유저 정보 UI 갱신 및 입력 필드를 클리어하고 메인 보드를 시현함.
+     */
     function loginSuccess() {
         document.getElementById('currentUserDisplay').innerText = loggedInUser;
 
-        // 입력 필드 초기화
         document.getElementById('loginName').value = "";
         document.getElementById('loginPassword').value = "";
 
-        // 메인 화면으로 이동 및 목록 갱신
         showScreen('mainScreen');
         loadMediaList();
     }
 
+    /**
+     * [현재 사용자 상태 해제 및 세션 로그아웃 소멸]
+     * 유저 바인딩 캐시를 null로 폐기하고 재생 중인 비디오/오디오 소스를 정지시킨 후 복구시킴.
+     */
     function logout() {
         loggedInUser = null;
-        loggedInUserId = null; // 로그아웃 시 보존 ID 비우기
+        loggedInUserId = null;
 
-        // 플레이어 정지
         const videoPlayer = document.getElementById('videoPlayer');
         const audioPlayer = document.getElementById('audioPlayer');
         videoPlayer.pause();
@@ -397,7 +415,10 @@
         showScreen('loginScreen');
     }
 
-    // 디버깅 힌트 조회 (API를 호출해 사용자의 비밀번호 획득)
+    /**
+     * [개발 편의용 비밀번호 도구 힌트 유출 조회]
+     * 가입 유저명을 기반으로 실시간 조회된 원 장치 정보를 비밀번호 팝업으로 사용자에게 보여줌.
+     */
     async function getPasswordHint() {
         const username = document.getElementById('hintName').value;
         if (!username) {
@@ -413,22 +434,26 @@
         }
     }
 
-    // --------------------------------------------------
-    // [C] 유저 가입 (Create)
-    // --------------------------------------------------
+    /**
+     * [신규 회원 가입 전송 처리 (Create)]
+     * 사용자명, 이메일, 패스워드 미비사항을 정밀 검사한 뒤 가입 REST API(POST)를 호출함.
+     */
     async function registerUser() {
         const username = document.getElementById('regName').value;
         const email = document.getElementById('regEmail').value;
         const password = document.getElementById('regPassword').value;
+
         if (!username || !email || !password) {
             alert("사용자명, 이메일, 비밀번호를 모두 입력해주세요.");
             return;
         }
+
         const res = await fetch(`${host}/api/users/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, email, password })
         });
+
         if (res.ok) {
             alert("가입 성공! 로그인 화면으로 돌아갑니다.");
             document.getElementById('regName').value = "";
@@ -440,9 +465,10 @@
         }
     }
 
-    // --------------------------------------------------
-    // [R] 유저 조회 (Read - 디버그용)
-    // --------------------------------------------------
+    /**
+     * [회원 특정 탐색 기능 (Read - 디버그용)]
+     * 입력 키워드를 이용하여 특정 사용자를 색인해 수집한 뒤, 편집 패널 데이터 입력 칸에 바인딩함.
+     */
     async function getUser() {
         const username = document.getElementById('searchName').value;
         const res = await fetch(`${host}/api/users/${username}`);
@@ -465,9 +491,10 @@
         }
     }
 
-    // --------------------------------------------------
-    // [U] 유저 정보 수정 (Update - 디버그용)
-    // --------------------------------------------------
+    /**
+     * [가입 회원 데이터 강제 갱신 개명 (Update - 디버그용)]
+     * 수집 변경된 폼 정보들의 무결성을 확인한 후 PUT API를 통해 대상 원장 데이터를 개작함.
+     */
     async function updateUser() {
         const id = document.getElementById('updateId').value;
         const username = document.getElementById('updateName').value;
@@ -498,9 +525,10 @@
         }
     }
 
-    // --------------------------------------------------
-    // [D] 유저 탈퇴 (Delete - 본인 직접 삭제)
-    // --------------------------------------------------
+    /**
+     * [당사자 직접 탈퇴/소멸 수행 (Delete - 본인 처리)]
+     * 본인확인 재인증을 통과한 후 백엔드에 회원 탈퇴 처리를 요청하여 영구 삭제를 진행함.
+     */
     async function withdrawSelf() {
         if (!loggedInUser) {
             alert("로그인 정보가 없습니다.");
@@ -527,9 +555,10 @@
         }
     }
 
-    // --------------------------------------------------
-    // [D] 유저 강제 탈퇴 (Delete - 관리자 전용 삭제)
-    // --------------------------------------------------
+    /**
+     * [관리자 강제 사법 권한 탈퇴 (Delete - admin 전용)]
+     * 관리자 'admin' 세션 권한을 탐색 확인한 후 권한 인가를 동반해 임의의 타 유저를 추방 처리함.
+     */
     async function deleteUserByAdmin() {
         if (loggedInUser !== "admin") {
             alert("관리자(admin) 계정만 사용자를 강제로 삭제할 수 있습니다.");
@@ -551,7 +580,6 @@
 
             if (res.ok) {
                 alert(`[${targetName}] 회원이 성공적으로 강제 탈퇴되었습니다.`);
-                // 입력 폼 비우기
                 document.getElementById('searchName').value = "";
                 document.getElementById('userInfo').innerText = "";
                 document.getElementById('updateId').value = "";
@@ -566,9 +594,10 @@
         }
     }
 
-    // --------------------------------------------------
-    // [C] 미디어 업로드 (Create)
-    // --------------------------------------------------
+    /**
+     * [멀티파트 바이너리 파일 업로드 수립 (Create)]
+     * 업로드 폼에 기입된 미디어 자원을 FormData 개체에 탑재시켜 비동기 멀티파트 전송을 완수함.
+     */
     async function uploadMedia() {
         if (!loggedInUser) {
             alert("업로드 작업을 진행하려면 로그인이 필요합니다.");
@@ -584,6 +613,7 @@
             return;
         }
 
+        // 브라우저 네이티브 FormData API를 이용해 인코딩을 수행함
         const formData = new FormData();
         formData.append("title", title);
         formData.append("type", type);
@@ -592,7 +622,7 @@
 
         const res = await fetch(`${host}/api/media/upload`, {
             method: 'POST',
-            body: formData
+            body: formData // Content-Type 헤더는 브라우저가 boundary 값을 포함하여 자동 빌드함
         });
 
         if (res.ok) {
@@ -601,6 +631,7 @@
             fileInput.value = "";
             loadMediaList();
         } else if (res.status === 409) {
+            // 중복된 영상 타이틀 등록 거절 응답을 처리함
             const errorResult = await res.json();
             alert(errorResult.message);
         } else {
@@ -608,9 +639,10 @@
         }
     }
 
-    // --------------------------------------------------
-    // [R] 미디어 목록 불러오기 (Read)
-    // --------------------------------------------------
+    /**
+     * [보유 중인 미디어 파일 메타데이터 목록 갱신 (Read)]
+     * 데이터베이스에 기록된 미디어 파일 리스트 전체를 읽어들여 DOM 구조를 동적으로 갱신 출력함.
+     */
     async function loadMediaList() {
         const res = await fetch(`${host}/api/media`);
         const list = await res.json();
@@ -619,7 +651,10 @@
 
         list.forEach(m => {
             const li = document.createElement('li');
+            li.style.marginGap = "5px";
             li.style.marginBottom = "5px";
+
+            // 재생, 자격 부여 이름 개작(Edit), 미디어 완전 소각(Delete) 함수 연결 단추 생성 구조 정의
             li.innerHTML = `
                 [${m.fileType}] <strong id="title-text-${m.id}">${m.title}</strong>
                 <span style="font-size: 0.85em; color: gray;">(업로더: ${m.uploadedBy})</span>
@@ -631,9 +666,13 @@
         });
     }
 
-    // --------------------------------------------------
-    // [U] 동영상 제목 수정 (Update)
-    // --------------------------------------------------
+    /**
+     * [미디어 타이틀 임의 수정 변경 (Update)]
+     * 사용자로부터 개명할 새로운 스트링을 확보한 뒤 변경 요청 인가 처리를 호출함.
+     *
+     * @param {number} id 변경할 타겟 미디어 메타 DB 인덱스 값임.
+     * @param {string} currentTitle 기존의 타이틀 정보임.
+     */
     async function editMediaTitle(id, currentTitle) {
         if (!loggedInUser) {
             alert("수정 작업을 진행하려면 로그인이 필요합니다.");
@@ -663,9 +702,12 @@
         }
     }
 
-    // --------------------------------------------------
-    // [D] 미디어 삭제 (Delete)
-    // --------------------------------------------------
+    /**
+     * [특정 미디어 영구 말소 (Delete)]
+     * 관리자 혹은 본인이 직접 파일 정보 및 디스크 리소스를 삭제할 수 있도록 소거 과정을 진행함.
+     *
+     * @param {number} id 파괴 대상 미디어 메타 데이터 식별키임.
+     */
     async function deleteMedia(id) {
         if (!loggedInUser) {
             alert("삭제 작업을 진행하려면 로그인이 필요합니다.");
@@ -688,15 +730,20 @@
         }
     }
 
-    // --------------------------------------------------
-    // [Stream] 미디어 스트리밍 재생
-    // --------------------------------------------------
+    /**
+     * [미디어 파일 다이렉트 스트리밍 재생 중개 (Stream)]
+     * 타겟 미디어 타입(VIDEO | AUDIO)에 준하는 HTML 네이티브 컴포넌트 플레이어를 활성화해 재생을 지원함.
+     *
+     * @param {number} id 재생할 자원 식별 인덱스임.
+     * @param {string} type 자원 유형을 표기함.
+     */
     function playMedia(id, type) {
         const videoPlayer = document.getElementById('videoPlayer');
         const audioPlayer = document.getElementById('audioPlayer');
         const streamUrl = `${host}/api/media/stream/${id}`;
 
         if (type === "VIDEO") {
+            // 다른 사운드 재생 트랙 오버랩 간섭 배제
             audioPlayer.style.display = "none";
             audioPlayer.pause();
 
@@ -704,6 +751,7 @@
             videoPlayer.style.display = "block";
             videoPlayer.play();
         } else {
+            // 다른 비디오 재생 트랙 오버랩 간섭 배제
             videoPlayer.style.display = "none";
             videoPlayer.pause();
 
