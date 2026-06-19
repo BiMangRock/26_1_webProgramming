@@ -75,6 +75,28 @@ class UserService(private val userRepository: UserRepository) {
         )
         return userRepository.save(userToSave)
     }
+
+
+
+    // UserService 클래스 내부의 deleteUser 함수를 아래 내용으로 교체합니다.
+    suspend fun deleteUser(id: Long, requestor: String): DeleteUserResult {
+        // 1. 삭제 대상 유저가 존재하는지 확인
+        val user = userRepository.findById(id) ?: return DeleteUserResult.NOT_FOUND
+
+        // 2. 요청자가 admin이 아니고, 삭제 대상의 username과도 다르다면 권한 거부(Forbidden)
+        if (requestor != "admin" && user.username != requestor) {
+            return DeleteUserResult.FORBIDDEN
+        }
+
+        userRepository.deleteById(id)
+        return DeleteUserResult.SUCCESS
+    }
+
+    // 결과 분기를 명확히 처리하기 위한 Enum 클래스 정의
+    enum class DeleteUserResult {
+        SUCCESS, FORBIDDEN, NOT_FOUND
+    }
+
 }
 
 // 업로드 처리 결과 표현용 클래스 정의
@@ -256,4 +278,19 @@ class GGShortsController(
             ResponseEntity.notFound().build()
         }
     }
+
+    // GGShortsController 클래스 내부의 deleteUser 함수를 아래 내용으로 교체합니다.
+    @DeleteMapping("/api/users/{id}")
+    suspend fun deleteUser(
+        @PathVariable id: Long,
+        @RequestParam("username") username: String // 삭제를 요청한 사람의 아이디
+    ): ResponseEntity<Void> {
+        log.info("Delete user request: targetId=$id, requestedBy=$username")
+        return when (userService.deleteUser(id, username)) {
+            UserService.DeleteUserResult.SUCCESS -> ResponseEntity.noContent().build()
+            UserService.DeleteUserResult.FORBIDDEN -> ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+            UserService.DeleteUserResult.NOT_FOUND -> ResponseEntity.notFound().build()
+        }
+    }
+
 }

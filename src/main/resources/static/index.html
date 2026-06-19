@@ -231,7 +231,11 @@
         <div>
             현재 로그인 사용자: <span style="color: blue; font-size: 1.1em;">[ <strong id="currentUserDisplay"></strong> ]</span>
         </div>
-        <button onclick="logout()" style="padding: 5px 15px;">로그아웃</button>
+        <div>
+            <!-- 💡 본인 스스로 탈퇴할 수 있는 회원 탈퇴 버튼 추가 -->
+            <button onclick="withdrawSelf()" style="padding: 5px 15px; background-color: #dc3545; color: white; border: none; border-radius: 4px; margin-right: 5px;">회원 탈퇴</button>
+            <button onclick="logout()" style="padding: 5px 15px;">로그아웃</button>
+        </div>
     </div>
 
     <!-- 미디어 관리 및 스트리밍 섹션 -->
@@ -287,6 +291,8 @@
                 <input id="updateEmail" placeholder="새 이메일">
                 <input id="updatePassword" type="password" placeholder="새 비밀번호">
                 <button onclick="updateUser()">수정</button>
+                <!-- 💡 관리자 전용 회원 강제 삭제 버튼 추가 -->
+                <button onclick="deleteUserByAdmin()" style="background-color: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 10px; margin-left: 5px;">관리자 권한으로 삭제</button>
             </div>
         </div>
     </div>
@@ -295,6 +301,7 @@
 <script>
     const host = "http://localhost:8080";
     let loggedInUser = null;
+    let loggedInUserId = null; // 💡 로그인 시 유저 고유 DB ID 값을 보존하는 용도 추가
 
     // --------------------------------------------------
     // [화면 제어 로직 (View Switcher)]
@@ -340,6 +347,7 @@
         // admin 계정 우회 로그인 제공
         if (username === "admin" && password === "admin") {
             loggedInUser = "admin";
+            loggedInUserId = 0; // admin은 가상 계정이므로 임의 ID로 설정
             loginSuccess();
             alert("관리자(admin) 권한으로 로그인 되었습니다.");
             return;
@@ -350,6 +358,7 @@
             const user = await res.json();
             if (user.password === password) {
                 loggedInUser = user.username;
+                loggedInUserId = user.id; // 💡 로그인 성공 시 DB 고유 ID를 보존
                 loginSuccess();
                 alert(`${loggedInUser}님 환영합니다!`);
             } else {
@@ -374,6 +383,8 @@
 
     function logout() {
         loggedInUser = null;
+        loggedInUserId = null; // 로그아웃 시 보존 ID 비우기
+
         // 플레이어 정지
         const videoPlayer = document.getElementById('videoPlayer');
         const audioPlayer = document.getElementById('audioPlayer');
@@ -484,6 +495,74 @@
             getUser();
         } else {
             alert("회원 정보 수정 실패!");
+        }
+    }
+
+    // --------------------------------------------------
+    // [D] 유저 탈퇴 (Delete - 본인 직접 삭제)
+    // --------------------------------------------------
+    async function withdrawSelf() {
+        if (!loggedInUser) {
+            alert("로그인 정보가 없습니다.");
+            return;
+        }
+        if (loggedInUser === "admin") {
+            alert("관리자 계정은 이 버튼으로 탈퇴할 수 없습니다.");
+            return;
+        }
+
+        if (confirm("정말 회원 탈퇴를 진행하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+            const res = await fetch(`${host}/api/users/${loggedInUserId}?username=${loggedInUser}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                alert("탈퇴 처리가 정상적으로 완료되었습니다. 이용해 주셔서 감사합니다.");
+                loggedInUser = null;
+                loggedInUserId = null;
+                showScreen('loginScreen');
+            } else {
+                alert("탈퇴 처리 중 오류가 발생했습니다.");
+            }
+        }
+    }
+
+    // --------------------------------------------------
+    // [D] 유저 강제 탈퇴 (Delete - 관리자 전용 삭제)
+    // --------------------------------------------------
+    async function deleteUserByAdmin() {
+        if (loggedInUser !== "admin") {
+            alert("관리자(admin) 계정만 사용자를 강제로 삭제할 수 있습니다.");
+            return;
+        }
+
+        const targetId = document.getElementById('updateId').value;
+        const targetName = document.getElementById('updateName').value;
+
+        if (!targetId) {
+            alert("삭제할 회원의 ID가 필요합니다. 회원을 먼저 조회해 주세요!");
+            return;
+        }
+
+        if (confirm(`정말 관리자 권한으로 [${targetName}] 회원을 강제 삭제하시겠습니까?`)) {
+            const res = await fetch(`${host}/api/users/${targetId}?username=${loggedInUser}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                alert(`[${targetName}] 회원이 성공적으로 강제 탈퇴되었습니다.`);
+                // 입력 폼 비우기
+                document.getElementById('searchName').value = "";
+                document.getElementById('userInfo').innerText = "";
+                document.getElementById('updateId').value = "";
+                document.getElementById('updateName').value = "";
+                document.getElementById('updateEmail').value = "";
+                document.getElementById('updatePassword').value = "";
+            } else if (res.status === 403) {
+                alert("삭제 권한이 없습니다.");
+            } else {
+                alert("삭제 처리에 실패했습니다.");
+            }
         }
     }
 
