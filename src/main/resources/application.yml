@@ -3,10 +3,15 @@ server:
 
 spring:
   r2dbc:
-    url: r2dbc:h2:mem:///ggshorts_db?options=DB_CLOSE_DELAY=-1
-    username: sa
-    password:
+    # ggshorts_db 라는 이름의 데이터베이스에 접속하도록 설정합니다.
+    url: r2dbc:mysql://localhost:3306/ggshorts_db?serverTimezone=Asia/Seoul&useSSL=false&allowPublicKeyRetrieval=true
+    username: root            # 🔥 MySQL 아이디를 입력합니다. (기본값은 root)
+    password: mysql    # 🔥 여기에 실제 본인의 MySQL 비밀번호를 적어주세요!
   sql:
     init:
+      # 서버가 켜질 때 아래 schema.sql에 정의된 테이블 생성 쿼리를 매번 실행합니다.
       mode: always
       schema-locations: classpath:schema.sql
+
+      #프로그램이 켜지면서 application.yml에 작성했던 MySQL 정보를 보고 이 ggshorts_db 데이터베이스에 비동기로 알아서 접속합니다.
+      #schema.sql 설정에 의해 테이블이 자동으로 만들어집니다.

@@ -1,8 +1,8 @@
 plugins {
-    id("org.springframework.boot") version "3.3.1"
-    id("io.spring.dependency-management") version "1.1.5"
-    kotlin("jvm") version "2.1.20"
-    kotlin("plugin.spring") version "2.1.20"
+    kotlin("jvm") version "1.9.22"
+    id("org.springframework.boot") version "3.2.2"
+    id("io.spring.dependency-management") version "1.1.4"
+    kotlin("plugin.spring") version "1.9.22"
 }
 
 group = "org.example"
@@ -13,27 +13,21 @@ repositories {
 }
 
 dependencies {
-    // 1차 검사 및 제안서 요구사항 충족을 위한 WebFlux 및 R2DBC 의존성
+    // Spring WebFlux & R2DBC 코어 라이브러리
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
 
-    // Kotlin Coroutines 지원 라이브러리
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.7.3")
-    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions:1.2.2")
-
-    // JSON 처리용 Jackson 및 리플렉션
+    // 코루틴 및 코틀린 리플렉션 지원
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
-    // Database 의존성 (초고속 데모용 H2 R2DBC 및 향후 확장용 MySQL 구성)
-    runtimeOnly("com.h2database:h2")
-    runtimeOnly("io.r2dbc:r2dbc-h2")
-    runtimeOnly("com.mysql:mysql-connector-j")
+    // 🔥 [중요] 기존 H2 드라이버를 지우고, MySQL R2DBC 비동기 드라이버를 추가합니다.
+    implementation("io.asyncer:r2dbc-mysql:1.1.0")
 
-    // 테스트 라이브러리
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation(kotlin("test"))
+    testImplementation("io.projectreactor:reactor-test")
 }
 
 tasks.test {
