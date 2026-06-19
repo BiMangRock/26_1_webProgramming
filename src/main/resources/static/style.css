@@ -1,0 +1,153 @@
+/* [전역 기본 레이아웃 구성 스타일링] */
+body { font-family: sans-serif; margin: 30px; background-color: #fcfcfc; }
+section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; background: white; }
+h2 { margin-top: 0; color: #333; }
+.flex { display: flex; gap: 20px; }
+input { margin-bottom: 5px; display: block; }
+button { cursor: pointer; }
+
+/* [로그인 인터페이스 컨테이너 레이아웃] */
+.login-outer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80vh;
+}
+.login-container {
+    width: 400px;
+    height: 310px;
+    border: 1px solid #999;
+    border-radius: 10px;
+    padding: 40px;
+    position: relative;
+    background-color: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+/* OP.GG 특유의 강렬하고 정돈된 로고 스타일 장식 */
+.login-logo {
+    text-align: center;
+    font-size: 34px;
+    font-weight: 900;
+    color: #1f1f1f;
+    margin-bottom: 5px;
+    letter-spacing: 1px;
+    font-family: 'Arial Black', Impact, sans-serif;
+}
+
+.login-container h2 {
+    text-align: center;
+    margin-bottom: 35px;
+    font-size: 15px;
+    color: #666;
+    font-weight: normal;
+    letter-spacing: 0px;
+}
+.input-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.input-row label {
+    width: 70px;
+    font-weight: bold;
+    font-size: 15px;
+}
+.input-row input {
+    flex: 1;
+    padding: 6px;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    font-size: 14px;
+}
+.login-submit-btn {
+    width: 80%;
+    margin: 15px auto 0 auto;
+    display: block;
+    padding: 8px;
+    background-color: #555;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+}
+/* 우하단 신규 가입 전송을 위한 둥근 시그널 버튼 배치 */
+.signup-trigger-btn {
+    position: absolute;
+    bottom: 25px;
+    right: 25px;
+    border: 1.5px solid #222;
+    border-radius: 25px;
+    padding: 8px 16px;
+    background-color: white;
+    font-size: 13px;
+    font-weight: bold;
+    color: #222;
+    text-decoration: none;
+    cursor: pointer;
+    outline: none;
+}
+.signup-trigger-btn:hover {
+    background-color: #eee;
+}
+
+/* [회원가입 레이아웃 스타일 설정] */
+.signup-container {
+    width: 380px;
+    margin: 100px auto;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 30px;
+    background: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+.signup-container h2 {
+    text-align: center;
+    margin-bottom: 25px;
+}
+.signup-container input {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.signup-btn {
+    width: 100%;
+    padding: 10px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+.cancel-btn {
+    width: 100%;
+    padding: 10px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+/* [메인 로그인 성공 후 작업 상단 제어 바] */
+.auth-bar {
+    background-color: #f0f0f0;
+    padding: 12px 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.debug-panel {
+    border: 1px dashed red;
+    background-color: #fff9f9;
+    padding: 15px;
+    margin-top: 40px;
+    border-radius: 5px;
+}

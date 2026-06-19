@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>GG-SHORTS - 회원가입</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="signup-container">
+    <h2>신규 회원 가입</h2>
+    <label>사용자명</label>
+    <input id="regName" placeholder="아이디(사용자명) 입력">
+    <label>이메일</label>
+    <input id="regEmail" placeholder="이메일 주소 입력">
+    <label>비밀번호</label>
+    <input id="regPassword" type="password" placeholder="비밀번호 설정">
+
+    <button class="signup-btn" onclick="registerUser()">가입 완료</button>
+    <button class="cancel-btn" onclick="goToLogin()">취소 (로그인으로)</button>
+</div>
+
+<script>
+    const host = "http://localhost:8080";
+
+    function goToLogin() {
+        window.location.href = "index.html";
+    }
+
+    async function registerUser() {
+        const username = document.getElementById('regName').value;
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+
+        if (!username || !email || !password) {
+            alert("사용자명, 이메일, 비밀번호를 모두 입력해주세요.");
+            return;
+        }
+
+        const res = await fetch(`${host}/api/users/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password })
+        });
+
+        if (res.ok) {
+            alert("가입 성공! 로그인 화면으로 돌아갑니다.");
+            window.location.href = "index.html";
+        } else {
+            alert("가입 처리에 실패했습니다. (중복 사용자명 확인)");
+        }
+    }
+</script>
+</body>
+</html>

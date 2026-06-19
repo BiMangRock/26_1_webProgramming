@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>GG-SHORTS - 메인 서비스</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="auth-bar">
+    <div>
+        현재 로그인 사용자: <span style="color: blue; font-size: 1.1em;">[ <strong id="currentUserDisplay"></strong> ]</span>
+    </div>
+    <div>
+        <button onclick="withdrawSelf()" style="padding: 5px 15px; background-color: #dc3545; color: white; border: none; border-radius: 4px; margin-right: 5px;">회원 탈퇴</button>
+        <button onclick="logout()" style="padding: 5px 15px;">로그아웃</button>
+    </div>
+</div>
+
+<section>
+    <h2>미디어 관리 및 스트리밍 (CRUD + Streaming)</h2>
+    <div class="flex">
+        <div style="flex: 1;">
+            <h3>미디어 업로드 (Create)</h3>
+            <input id="mediaTitle" placeholder="동영상 제목"><br>
+            Type:
+            <select id="mediaType">
+                <option value="VIDEO">VIDEO (비디오)</option>
+                <option value="AUDIO">AUDIO (오디오)</option>
+            </select><br><br>
+            <input type="file" id="mediaFile"><br><br>
+            <button onclick="uploadMedia()" style="padding: 8px 20px; font-weight:bold;">업로드</button>
+        </div>
+        <div style="flex: 1;">
+            <h3>미디어 목록 및 플레이어</h3>
+            <button onclick="loadMediaList()" style="padding: 5px 10px; margin-bottom: 10px;">목록 새로고침</button>
+            <ul id="mediaList"></ul>
+
+            <h4>플레이어</h4>
+            <video id="videoPlayer" controls width="320" height="240" style="display:none;"></video>
+            <br>
+            <audio id="audioPlayer" controls style="display:none;"></audio>
+        </div>
+    </div>
+</section>
+
+<div style="margin-top: 30px; text-align: right;">
+    <button onclick="toggleDebugPanel()" style="font-size: 12px; background: none; border: 1px dashed red; color: red; padding: 5px;">
+        [디버그용] 회원 전체 관리 패널 토글
+    </button>
+</div>
+
+<div id="debugPanel" class="debug-panel" style="display: none;">
+    <h3 style="color: red; margin-top:0;">유저 정보 관리 (CRUD 백업)</h3>
+    <div class="flex">
+        <div>
+            <h4>회원 조회 및 검증 (Read)</h4>
+            <input id="searchName" placeholder="사용자명 검색">
+            <button onclick="getUser()">조회</button>
+            <p id="userInfo"></p>
+        </div>
+        <div>
+            <h4>회원 정보 수정 (Update)</h4>
+            <input id="updateId" placeholder="회원 ID" readonly style="background-color: #eee;">
+            <input id="updateName" placeholder="새 사용자명">
+            <input id="updateEmail" placeholder="새 이메일">
+            <input id="updatePassword" type="password" placeholder="새 비밀번호">
+            <button onclick="updateUser()">수정</button>
+            <button onclick="deleteUserByAdmin()" style="background-color: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 10px; margin-left: 5px;">관리자 권한으로 삭제</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const host = "http://localhost:8080";
+
+    // 세션 저장소에서 로그인한 사용자 정보 로드
+    const loggedInUser = sessionStorage.getItem("loggedInUser");
+    const loggedInUserId = sessionStorage.getItem("loggedInUserId");
+
+    // 로그인하지 않은 비인증 사용자일 경우 강제 리다이렉트
+    window.onload = function() {
+        if (!loggedInUser) {
+            alert("로그인이 유효하지 않거나 만료되었습니다.");
+            window.location.href = "index.html";
+            return;
+        }
+        document.getElementById('currentUserDisplay').innerText = loggedInUser;
+        loadMediaList();
+    }
+
+    function logout() {
+        sessionStorage.clear();
+
+        const videoPlayer = document.getElementById('videoPlayer');
+        const audioPlayer = document.getElementById('audioPlayer');
+        videoPlayer.pause();
+        audioPlayer.pause();
+
+        alert("로그아웃 되었습니다.");
+        window.location.href = "index.html";
+    }
+
+    function toggleDebugPanel() {
+        const panel = document.getElementById('debugPanel');
+        panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
+    }
+
+    async function getUser() {
+        const username = document.getElementById('searchName').value;
+        const res = await fetch(`${host}/api/users/${username}`);
+        const infoText = document.getElementById('userInfo');
+
+        if (res.ok) {
+            const user = await res.json();
+            infoText.innerText = `ID: ${user.id} / Name: ${user.username} / Email: ${user.email}`;
+
+            document.getElementById('updateId').value = user.id;
+            document.getElementById('updateName').value = user.username;
+            document.getElementById('updateEmail').value = user.email;
+            document.getElementById('updatePassword').value = user.password;
+        } else {
+            infoText.innerText = "사용자를 찾을 수 없습니다.";
+            clearUpdateForm();
+        }
+    }
+
+    function clearUpdateForm() {
+        document.getElementById('updateId').value = "";
+        document.getElementById('updateName').value = "";
+        document.getElementById('updateEmail').value = "";
+        document.getElementById('updatePassword').value = "";
+    }
+
+    async function updateUser() {
+        const id = document.getElementById('updateId').value;
+        const username = document.getElementById('updateName').value;
+        const email = document.getElementById('updateEmail').value;
+        const password = document.getElementById('updatePassword').value;
+
+        if (!id) {
+            alert("수정할 회원의 ID가 필요합니다. 회원을 먼저 조회해 주세요!");
+            return;
+        }
+        if (!username || !email || !password) {
+            alert("수정할 모든 정보를 입력해 주세요.");
+            return;
+        }
+
+        const res = await fetch(`${host}/api/users/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password })
+        });
+
+        if (res.ok) {
+            alert("회원 정보 수정 성공!");
+            document.getElementById('searchName').value = username;
+            getUser();
+        } else {
+            alert("회원 정보 수정 실패!");
+        }
+    }
+
+    async function withdrawSelf() {
+        if (loggedInUser === "admin") {
+            alert("관리자 계정은 이 버튼으로 탈퇴할 수 없습니다.");
+            return;
+        }
+
+        if (confirm("정말 회원 탈퇴를 진행하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+            const res = await fetch(`${host}/api/users/${loggedInUserId}?username=${loggedInUser}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                alert("탈퇴 처리가 완료되었습니다. 감사합니다.");
+                sessionStorage.clear();
+                window.location.href = "index.html";
+            } else {
+                alert("탈퇴 처리 중 오류가 발생했습니다.");
+            }
+        }
+    }
+
+    async function deleteUserByAdmin() {
+        if (loggedInUser !== "admin") {
+            alert("관리자(admin) 계정만 사용자를 강제로 삭제할 수 있습니다.");
+            return;
+        }
+
+        const targetId = document.getElementById('updateId').value;
+        const targetName = document.getElementById('updateName').value;
+
+        if (!targetId) {
+            alert("삭제할 회원의 ID가 필요합니다. 회원을 먼저 조회해 주세요!");
+            return;
+        }
+
+        if (confirm(`정말 관리자 권한으로 [${targetName}] 회원을 강제 삭제하시겠습니까?`)) {
+            const res = await fetch(`${host}/api/users/${targetId}?username=${loggedInUser}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                alert(`[${targetName}] 회원이 성공적으로 강제 탈퇴되었습니다.`);
+                document.getElementById('searchName').value = "";
+                document.getElementById('userInfo').innerText = "";
+                clearUpdateForm();
+            } else if (res.status === 403) {
+                alert("삭제 권한이 없습니다.");
+            } else {
+                alert("삭제 처리에 실패했습니다.");
+            }
+        }
+    }
+
+    async function uploadMedia() {
+        const title = document.getElementById('mediaTitle').value;
+        const type = document.getElementById('mediaType').value;
+        const fileInput = document.getElementById('mediaFile');
+
+        if (!title || !fileInput.files[0]) {
+            alert("제목과 파일을 모두 입력해 주세요.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("title", title);
+        formData.append("type", type);
+        formData.append("file", fileInput.files[0]);
+        formData.append("uploader", loggedInUser);
+
+        const res = await fetch(`${host}/api/media/upload`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (res.ok) {
+            alert("업로드 성공!");
+            document.getElementById('mediaTitle').value = "";
+            fileInput.value = "";
+            loadMediaList();
+        } else if (res.status === 409) {
+            const errorResult = await res.json();
+            alert(errorResult.message);
+        } else {
+            alert("업로드 실패!");
+        }
+    }
+
+    async function loadMediaList() {
+        const res = await fetch(`${host}/api/media`);
+        const list = await res.json();
+        const listEl = document.getElementById('mediaList');
+        listEl.innerHTML = "";
+
+        list.forEach(m => {
+            const li = document.createElement('li');
+            li.style.marginBottom = "5px";
+            li.innerHTML = `
+                [${m.fileType}] <strong id="title-text-${m.id}">${m.title}</strong>
+                <span style="font-size: 0.85em; color: gray;">(업로더: ${m.uploadedBy})</span>
+                <button onclick="playMedia(${m.id}, '${m.fileType}')">재생</button>
+                <button onclick="editMediaTitle(${m.id}, '${m.title}')">이름 수정</button>
+                <button onclick="deleteMedia(${m.id})">삭제</button>
+            `;
+            listEl.appendChild(li);
+        });
+    }
+
+    async function editMediaTitle(id, currentTitle) {
+        const newTitle = prompt("변경하고자 하는 새로운 동영상 제목을 입력하세요:", currentTitle);
+        if (newTitle === null) return;
+
+        const trimmedTitle = newTitle.trim();
+        if (trimmedTitle === "") {
+            alert("공백 제목으로는 수정할 수 없습니다.");
+            return;
+        }
+
+        const res = await fetch(`${host}/api/media/${id}?title=${encodeURIComponent(trimmedTitle)}&username=${loggedInUser}`, {
+            method: 'PUT'
+        });
+
+        if (res.ok) {
+            alert("동영상 제목이 변경되었습니다.");
+            loadMediaList();
+        } else if (res.status === 403) {
+            alert("수정 권한이 없습니다. (본인이 올린 동영상이거나 admin 계정만 수정 가능합니다)");
+        } else {
+            alert("동영상 제목 수정에 실패했습니다.");
+        }
+    }
+
+    async function deleteMedia(id) {
+        if (confirm("정말 이 미디어를 삭제하시겠습니까?")) {
+            const res = await fetch(`${host}/api/media/${id}?username=${loggedInUser}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                alert("성공적으로 삭제되었습니다.");
+                loadMediaList();
+            } else if (res.status === 403) {
+                alert("삭제 권한이 거부되었습니다. (본인이 업로드한 미디어이거나 admin 계정이어야 합니다)");
+            } else {
+                alert("미디어 삭제 처리에 실패하였습니다.");
+            }
+        }
+    }
+
+    function playMedia(id, type) {
+        const videoPlayer = document.getElementById('videoPlayer');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const streamUrl = `${host}/api/media/stream/${id}`;
+
+        if (type === "VIDEO") {
+            audioPlayer.style.display = "none";
+            audioPlayer.pause();
+
+            videoPlayer.src = streamUrl;
+            videoPlayer.style.display = "block";
+            videoPlayer.play();
+        } else {
+            videoPlayer.style.display = "none";
+            videoPlayer.pause();
+
+            audioPlayer.src = streamUrl;
+            audioPlayer.style.display = "block";
+            audioPlayer.play();
+        }
+    }
+</script>
+</body>
+</html>
