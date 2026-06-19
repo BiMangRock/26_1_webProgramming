@@ -2,11 +2,15 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <!-- 💡 [회원가입 전용 탭 타이틀 정의] -->
     <title>GG-SHORTS - 회원가입</title>
+    <!-- 💡 [공통 스타일시트 연동] -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- 💡 [가입 컴포넌트 감싸개 컨테이너]
+     - 회원 정보 기입 양식과 전송 처리 제어 단추들이 위치한 격리 공간임 -->
 <div class="signup-container">
     <h2>신규 회원 가입</h2>
     <label>사용자명</label>
@@ -16,17 +20,31 @@
     <label>비밀번호</label>
     <input id="regPassword" type="password" placeholder="비밀번호 설정">
 
+    <!-- 💡 [최종 데이터 영속 전송 요청 버튼] -->
     <button class="signup-btn" onclick="registerUser()">가입 완료</button>
+    <!-- 💡 [가입 철회 및 로그인 회귀 단추] -->
     <button class="cancel-btn" onclick="goToLogin()">취소 (로그인으로)</button>
 </div>
 
 <script>
+    /** 💡 [host] 백엔드 R2DBC 스프링 부트 서버 호스트 주소 및 바인딩 포트 규격 정의 */
     const host = "http://localhost:8080";
 
+    /**
+     * 💡 [goToLogin 기능설명]
+     * - 회원 가입 의사를 철회하고 메인 포탈 로그인 진입점(index.html)으로 되돌아가게 뷰 주소를 원복시킴
+     */
     function goToLogin() {
         window.location.href = "index.html";
     }
 
+    /**
+     * 💡 [registerUser 기능설명]
+     * - 가입 양식 데이터 인풋값들의 완전 누락 여부를 완벽 차단 검증함
+     * - 스프링 컨트롤러 수신 규격(Application/Json)에 정합하도록 자바스크립트 객체를 직렬화(JSON.stringify) 가공함
+     * - POST REST API를 작동시켜 유저 원장 테이블에 레코드 생성을 요청(Create)함
+     * - 가입 성공 즉시 기존 텍스트 버퍼를 초기화하고 로그인 메인 포탈로 사용자 화면을 전향 환원함
+     */
     async function registerUser() {
         const username = document.getElementById('regName').value;
         const email = document.getElementById('regEmail').value;
@@ -38,14 +56,14 @@
         }
 
         const res = await fetch(`${host}/api/users/signup`, {
-            method: 'POST',
+            method: 'POST', // 신규 인스턴스 생성을 의미하는 POST 규격 송신
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, email, password })
+            body: JSON.stringify({ username, email, password }) // 직렬화 트랜스폼 알고리즘 적용부
         });
 
         if (res.ok) {
             alert("가입 성공! 로그인 화면으로 돌아갑니다.");
-            window.location.href = "index.html";
+            window.location.href = "index.html"; // 성공 직후 복귀 알고리즘 작동함
         } else {
             alert("가입 처리에 실패했습니다. (중복 사용자명 확인)");
         }

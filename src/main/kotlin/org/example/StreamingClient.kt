@@ -23,6 +23,9 @@ import java.util.concurrent.atomic.AtomicLong
  * [WebClient 기반 비차단(Non-blocking) 비동기 멀티미디어 스트리밍 전용 클라이언트 애플리케이션임]
  * 코루틴(Coroutine)의 비동기 동시성 처리를 활용하여 다중 파일 다운로드 및 재생기 구동을 백그라운드 스레드에서 실시간으로 실행하는 멀티태스킹 아키텍처 구조임.
  */
+
+
+//GGShortsApplication.kt를 먼저 실행해주세요ㅕ!!!!!
 fun main() = runBlocking {
     /** [baseUrl] 서버 게이트웨이 접속용 기본 호스트 및 포트 주소임 */
     val baseUrl = "http://localhost:8080"

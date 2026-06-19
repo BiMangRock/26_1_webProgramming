@@ -2,30 +2,46 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <!-- 💡 [브라우저 탭 타이틀 정의]
+         - 로그인 화면용 탭 이름을 지정함 -->
     <title>GG-SHORTS - 로그인</title>
+    <!-- 💡 [공통 스타일시트 연동]
+         - 동일 경로에 분리 설계한 style.css 파이프라인과 결합하여 전역 레이아웃 구성을 빌드함 -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- 💡 [로그인 폼 감싸개 아우터 세그먼트]
+     - 브라우저 정중앙 정렬 배치를 담당하는 외부 컨테이너임 -->
 <div class="login-outer">
+    <!-- 💡 [로그인 입력 박스 메인 바디]
+         - 로고, 서브 타이틀, ID/PW 인풋 영역, 로그인 및 회원가입 전향 버튼들을 포함함 -->
     <div class="login-container">
+        <!-- 💡 [OP.GG 스타일 심볼 로고]
+             - 강렬한 볼드 폰트 페이스와 고유 마진 간격을 지닌 타이틀 로고 영역임 -->
         <div class="login-logo">GG-SHORTS</div>
         <h2>로그인</h2>
 
+        <!-- 💡 [사용자 아이디 정보 기입 칸] -->
         <div class="input-row">
             <label for="loginName">아이디</label>
             <input id="loginName" type="text" placeholder="아이디 입력">
         </div>
+        <!-- 💡 [사용자 패스워드 비밀번호 기입 칸] -->
         <div class="input-row">
             <label for="loginPassword">비번</label>
             <input id="loginPassword" type="password" placeholder="비밀번호 입력">
         </div>
+        <!-- 💡 [로그인 행위 격발 인터랙션 버튼] -->
         <button class="login-submit-btn" onclick="login()">로그인</button>
 
+        <!-- 💡 [회원가입 동적 파일 전환용 단추] -->
         <button class="signup-trigger-btn" onclick="goToSignup()">신규회원 가입!</button>
     </div>
 </div>
 
+<!-- 💡 [비상 디버깅 전용 비밀번호 힌트 출력 창]
+     - 가입된 평문 비밀번호를 즉시 탈취하듯 복구해주는 디버그 목적의 서브 도구 박스임 -->
 <div style="text-align: center; margin-top: -50px;">
     <span style="font-size: 12px; color: #888;">[디버그 도구] 비밀번호를 잊으셨나요? </span>
     <input id="hintName" placeholder="아이디 입력" style="display:inline-block; width:100px; padding:3px; font-size:12px;">
@@ -33,12 +49,25 @@
 </div>
 
 <script>
+    /** 💡 [host] 백엔드 R2DBC 스프링 부트 서버 호스트 주소 및 바인딩 포트 규격 정의 */
     const host = "http://localhost:8080";
 
+    /**
+     * 💡 [goToSignup 기능설명]
+     * - 현재 활성화된 브라우저 창의 location 주소를 signup.html로 강제 개작함
+     * - 멀티 파일 구조 하에서 가입 화면으로 완전 이동(리다이렉트)시키는 수단임
+     */
     function goToSignup() {
         window.location.href = "signup.html";
     }
 
+    /**
+     * 💡 [login 기능설명]
+     * - 브라우저 입력 폼의 ID/PW 유효성을 1차 사전 필터 검사함
+     * - 관리자 'admin' 계정 유입 시 백엔드 DB 왕복 오버헤드를 아예 거치지 않고 가상 식별자로 선제 승인 우회 처리함
+     * - 일반 사용자일 시 비동기 GET API를 전송하여 유저 레코드를 탐색 수집한 후, 평문 비밀번호 값을 완전 대조 확인 처리함
+     * - 인증 완수 성공 즉시, 다중 HTML 파일 환경 간에 데이터 무손실 전달을 보증하기 위해 브라우저 'sessionStorage' 메모리에 사용자명과 PK 값을 세션 락업 캐싱함
+     */
     async function login() {
         const username = document.getElementById('loginName').value;
         const password = document.getElementById('loginPassword').value;
@@ -48,23 +77,27 @@
             return;
         }
 
+        // [행동 규칙 가드] admin 관리자 특수 로그인 처리 알고리즘임
         if (username === "admin" && password === "admin") {
             sessionStorage.setItem("loggedInUser", "admin");
             sessionStorage.setItem("loggedInUserId", "0");
             alert("관리자(admin) 권한으로 로그인 되었습니다.");
-            window.location.href = "main.html";
+            window.location.href = "main.html"; // 메인 서비스 보드로 전향 이동함
             return;
         }
 
         try {
+            // [REST API 호출] 가입된 유저 메타 정보를 단건 추적 조회함
             const res = await fetch(`${host}/api/users/${username}`);
             if (res.ok) {
                 const user = await res.json();
+                // [평문 데이터 매칭 알고리즘] DB 소유 패스워드와 기입 패스워드의 일치 여부를 판단함
                 if (user.password === password) {
+                    // 성공 정보를 브라우저 세션 영속 영역에 보존함 (창이 닫히기 전까지 실시간 유지됨)
                     sessionStorage.setItem("loggedInUser", user.username);
                     sessionStorage.setItem("loggedInUserId", user.id);
                     alert(`${user.username}님 환영합니다!`);
-                    window.location.href = "main.html";
+                    window.location.href = "main.html"; // 승인 완료 후 핵심 작업 공간으로 무대 전환함
                 } else {
                     alert("비밀번호가 일치하지 않습니다.");
                 }
@@ -76,6 +109,11 @@
         }
     }
 
+    /**
+     * 💡 [getPasswordHint 기능설명]
+     * - 디버깅 프로세스를 보조하기 위해 유저 명칭 기준의 비동기 GET REST API를 개시함
+     * - 응답 오브젝트 내부의 패스워드 평문 스트링 값을 가공 없는 브라우저 alert 팝업으로 유출 전시해주는 비상 대처 알고리즘임
+     */
     async function getPasswordHint() {
         const username = document.getElementById('hintName').value;
         if (!username) {

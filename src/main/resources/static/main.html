@@ -2,24 +2,36 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <!-- 💡 [서비스 전용 탭 타이틀 정의] -->
     <title>GG-SHORTS - 메인 서비스</title>
+    <!-- 💡 [공통 스타일시트 연동] -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- ==================================================
+     💡 [상단 핵심 회원 정보 감시 및 탈퇴바 영역]
+     ================================================== -->
 <div class="auth-bar">
     <div>
+        <!-- 세션 저장소에서 파싱하여 가져온 실시간 사용자명 텍스트 주입 대상 공간임 -->
         현재 로그인 사용자: <span style="color: blue; font-size: 1.1em;">[ <strong id="currentUserDisplay"></strong> ]</span>
     </div>
     <div>
+        <!-- 당사자 본인의 정보 영구 처분 및 가입 상태 말소(Delete)를 격발하는 버튼임 -->
         <button onclick="withdrawSelf()" style="padding: 5px 15px; background-color: #dc3545; color: white; border: none; border-radius: 4px; margin-right: 5px;">회원 탈퇴</button>
+        <!-- 세션 점유 상태를 파괴하고 첫 포탈로 회귀하는 단추임 -->
         <button onclick="logout()" style="padding: 5px 15px;">로그아웃</button>
     </div>
 </div>
 
+<!-- ==================================================
+     💡 [미디어 관리 및 실시간 스트리밍 대시보드 코어 공간]
+     ================================================== -->
 <section>
     <h2>미디어 관리 및 스트리밍 (CRUD + Streaming)</h2>
     <div class="flex">
+        <!-- 💡 [A. 대용량 미디어 파일 멀티파트 등록 세그먼트 (Create)] -->
         <div style="flex: 1;">
             <h3>미디어 업로드 (Create)</h3>
             <input id="mediaTitle" placeholder="동영상 제목"><br>
@@ -31,34 +43,46 @@
             <input type="file" id="mediaFile"><br><br>
             <button onclick="uploadMedia()" style="padding: 8px 20px; font-weight:bold;">업로드</button>
         </div>
+
+        <!-- 💡 [B. 미디어 목록 동적 갱신 및 선택 플레이 세그먼트 (Read)] -->
         <div style="flex: 1;">
             <h3>미디어 목록 및 플레이어</h3>
             <button onclick="loadMediaList()" style="padding: 5px 10px; margin-bottom: 10px;">목록 새로고침</button>
+            <!-- 백엔드 메타데이터 조회 결과물들로 실시간 자식 노드들을 전면 가공 재생성할 표적 리스트 타겟 엘리먼트임 -->
             <ul id="mediaList"></ul>
 
             <h4>플레이어</h4>
+            <!-- VIDEO 파일 스트리밍 시 활성화되는 플레이어 (Seeking 및 Accept-Ranges 지원 규격 연동) -->
             <video id="videoPlayer" controls width="320" height="240" style="display:none;"></video>
             <br>
+            <!-- AUDIO 파일 스트리밍 시 활성화되는 플레이어 -->
             <audio id="audioPlayer" controls style="display:none;"></audio>
         </div>
     </div>
 </section>
 
+<!-- ==================================================
+     💡 [디버깅 전용 백오피스 회원 정보 전수 통제 트리거 영역]
+     ================================================== -->
 <div style="margin-top: 30px; text-align: right;">
     <button onclick="toggleDebugPanel()" style="font-size: 12px; background: none; border: 1px dashed red; color: red; padding: 5px;">
         [디버그용] 회원 전체 관리 패널 토글
     </button>
 </div>
 
+<!-- 💡 [디버그 전용 백오피스 회원 정보 전수 통제 패널 세그먼트]
+     - 데이터베이스 내부의 모든 가입 레코드 상태를 강제 읽기(Read), 갱신 수정(Update), 사법 삭제(Delete) 처리하는 비상 제어 데크임 -->
 <div id="debugPanel" class="debug-panel" style="display: none;">
     <h3 style="color: red; margin-top:0;">유저 정보 관리 (CRUD 백업)</h3>
     <div class="flex">
+        <!-- 💡 [C. 임의 회원 상세 색인 수집 (Read)] -->
         <div>
             <h4>회원 조회 및 검증 (Read)</h4>
             <input id="searchName" placeholder="사용자명 검색">
             <button onclick="getUser()">조회</button>
             <p id="userInfo"></p>
         </div>
+        <!-- 💡 [D. 색인 회원 개작 갱신 및 강제 배출 소멸 세그먼트 (Update + Delete)] -->
         <div>
             <h4>회원 정보 수정 (Update)</h4>
             <input id="updateId" placeholder="회원 ID" readonly style="background-color: #eee;">
@@ -66,31 +90,46 @@
             <input id="updateEmail" placeholder="새 이메일">
             <input id="updatePassword" type="password" placeholder="새 비밀번호">
             <button onclick="updateUser()">수정</button>
+            <!-- admin 최고 권한 탈퇴(Delete) 격발 연쇄 기능 단추임 -->
             <button onclick="deleteUserByAdmin()" style="background-color: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 10px; margin-left: 5px;">관리자 권한으로 삭제</button>
         </div>
     </div>
 </div>
 
 <script>
+    /** 💡 [host] 백엔드 R2DBC 스프링 부트 서버 호스트 주소 및 바인딩 포트 규격 정의 */
     const host = "http://localhost:8080";
 
-    // 세션 저장소에서 로그인한 사용자 정보 로드
+    /** 💡 [loggedInUser] 브라우저 세션 저장소(sessionStorage)로부터 복구 취득한 현재 로그인 사용자 계정명임 */
     const loggedInUser = sessionStorage.getItem("loggedInUser");
+    /** 💡 [loggedInUserId] 브라우저 세션 저장소로부터 복구 취득한 현재 로그인 사용자의 DB PK 식별 ID 값임 */
     const loggedInUserId = sessionStorage.getItem("loggedInUserId");
 
-    // 로그인하지 않은 비인증 사용자일 경우 강제 리다이렉트
+    /**
+     * 💡 [window.onload 가드 기법 기능설명]
+     * - HTML 본문 소스 렌더링 및 파일 완전 수집 직후 강제 격발되는 브라우저 로딩 콜백 메커니즘임
+     * - 이전 로그인 단계(index.html)에서 sessionStorage에 할당해둔 세션 캐싱 정보의 누락 여부를 판단함
+     * - 비인증 부정 침입 우회 시도가 포착되면 경고창을 띄우고 진입 장벽 로그인 포탈(index.html)로 강제 추방(Bypass Redirect) 처리함
+     * - 통과 완료된 정당한 회원일 시, 상단 정보 바 갱신 및 보유 중인 미디어 컬렉션을 백엔드로부터 실시간 획득함 [2]
+     */
     window.onload = function() {
         if (!loggedInUser) {
             alert("로그인이 유효하지 않거나 만료되었습니다.");
-            window.location.href = "index.html";
+            window.location.href = "index.html"; // 부정 접근 가드 복구 회귀 알고리즘 적용부
             return;
         }
         document.getElementById('currentUserDisplay').innerText = loggedInUser;
-        loadMediaList();
+        loadMediaList(); // 실시간 미디어 뷰 갱신
     }
 
+    /**
+     * 💡 [logout 기능설명]
+     * - 브라우저 세션 저장소에 담겨있던 회원 정보 캐시(sessionStorage)를 완전히 청소 및 파괴(Clear)함
+     * - 백그라운드로 작동 중이거나 버퍼 스트리밍 중인 플레이어들을 일시정지시키고 숨김 상태로 원복시킴
+     * - 안전하게 초기 로그인 포탈 경로(index.html)로 무대를 회귀 전환시킴
+     */
     function logout() {
-        sessionStorage.clear();
+        sessionStorage.clear(); // 세션 영구 제거 알고리즘
 
         const videoPlayer = document.getElementById('videoPlayer');
         const audioPlayer = document.getElementById('audioPlayer');
@@ -98,14 +137,24 @@
         audioPlayer.pause();
 
         alert("로그아웃 되었습니다.");
-        window.location.href = "index.html";
+        window.location.href = "index.html"; // 탈출 및 복귀 처리부
     }
 
+    /**
+     * 💡 [toggleDebugPanel 기능설명]
+     * - 디버깅 통제 패널 세그먼트의 'display' CSS 스타일을 'none'과 'block' 상태로 시소 타듯 상태 변경해주는 토글 알고리즘임
+     */
     function toggleDebugPanel() {
         const panel = document.getElementById('debugPanel');
         panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
     }
 
+    /**
+     * 💡 [getUser 기능설명 (Read)]
+     * - 디버그 패널 내 기입된 유저명 검색 문자열을 활용하여 단건 검색 REST API를 호출함
+     * - 반환된 회원 데이터 수집에 성공하면 이를 정보 디스플레이 단락에 출력함
+     * - 수정 및 탈퇴 대상에 정확히 타겟 맵되도록 우측 세부 수정 입력 폼 필드의 내부 밸류값들에 DB 상태 원본 데이터를 동적으로 바인딩 세팅함
+     */
     async function getUser() {
         const username = document.getElementById('searchName').value;
         const res = await fetch(`${host}/api/users/${username}`);
@@ -115,16 +164,21 @@
             const user = await res.json();
             infoText.innerText = `ID: ${user.id} / Name: ${user.username} / Email: ${user.email}`;
 
+            // 수정 폼 동적 데이터 주입
             document.getElementById('updateId').value = user.id;
             document.getElementById('updateName').value = user.username;
             document.getElementById('updateEmail').value = user.email;
             document.getElementById('updatePassword').value = user.password;
         } else {
             infoText.innerText = "사용자를 찾을 수 없습니다.";
-            clearUpdateForm();
+            clearUpdateForm(); // 실패 시 폼 원복 소거 처리
         }
     }
 
+    /**
+     * 💡 [clearUpdateForm 기능설명]
+     * - 디버깅 패널 수정 폼 영역에 누적되어 있던 이전 회원 텍스트 버퍼 잔재 데이터들을 일괄 빈값 처리해주는 소거 기능 도구임
+     */
     function clearUpdateForm() {
         document.getElementById('updateId').value = "";
         document.getElementById('updateName').value = "";
@@ -132,6 +186,12 @@
         document.getElementById('updatePassword').value = "";
     }
 
+    /**
+     * 💡 [updateUser 기능설명 (Update)]
+     * - 수정 기입된 정보들의 전반 정합성을 전수 검사함
+     * - PUT REST API 전송을 구동하여 DB 내부의 원 레코드 테이블 컬럼 정보를 실시간 동적 개명 및 개작 처리(Update)함
+     * - 수정이 완료되면 즉시 최신 정보 수집을 위해 색인 복구용 검색 함수를 연쇄 트리거 호출함
+     */
     async function updateUser() {
         const id = document.getElementById('updateId').value;
         const username = document.getElementById('updateName').value;
@@ -148,7 +208,7 @@
         }
 
         const res = await fetch(`${host}/api/users/${id}`, {
-            method: 'PUT',
+            method: 'PUT', // 인스턴스 전수 교체 목적의 PUT 명세 가동
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, email, password })
         });
@@ -156,12 +216,19 @@
         if (res.ok) {
             alert("회원 정보 수정 성공!");
             document.getElementById('searchName').value = username;
-            getUser();
+            getUser(); // 최신 DB 원장 상태 정보 실시간 패치
         } else {
             alert("회원 정보 수정 실패!");
         }
     }
 
+    /**
+     * 💡 [withdrawSelf 기능설명 (Delete)]
+     * - 로그인 유저 본인의 자발적 파괴 탈퇴 루틴임
+     * - 2차 확인용 Confirm 브라우저 모달 대화창을 띄워 사용자 실수에 의한 계정 완전 삭제 위험을 방어함
+     * - 본인 아이디를 소유주 정보 파라미터(?username=)로 강제 첨부하여 보안 검증을 통과한 뒤 DELETE API를 호출함 [2]
+     * - 탈퇴가 승인되면 브라우저 내부 세션 메모리를 완전 소각(sessionStorage.clear)하고 로그인 포탈로 완전히 복귀함
+     */
     async function withdrawSelf() {
         if (loggedInUser === "admin") {
             alert("관리자 계정은 이 버튼으로 탈퇴할 수 없습니다.");
@@ -170,19 +237,26 @@
 
         if (confirm("정말 회원 탈퇴를 진행하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
             const res = await fetch(`${host}/api/users/${loggedInUserId}?username=${loggedInUser}`, {
-                method: 'DELETE'
+                method: 'DELETE' // 완전 처분 명세 전송
             });
 
             if (res.ok) {
                 alert("탈퇴 처리가 완료되었습니다. 감사합니다.");
-                sessionStorage.clear();
-                window.location.href = "index.html";
+                sessionStorage.clear(); // 세션 캐시 말살
+                window.location.href = "index.html"; // 포탈 복귀
             } else {
                 alert("탈퇴 처리 중 오류가 발생했습니다.");
             }
         }
     }
 
+    /**
+     * 💡 [deleteUserByAdmin 기능설명 (Delete)]
+     * - 관리자 'admin' 계정에게 위임된 타 회원 강제 퇴출 및 영속 제거 기능임
+     * - 요청자 세션 정보를 대조하여 'admin'이 아닌 비인가 시도가 탐지되면 즉각 처리를 원천 거부 차단함 [2]
+     * - 타겟 ID를 쿼리 파라미터(?username=admin) 인가증과 동봉 전송하여 백엔드 비즈니스 로직 단에서 강제 삭제 프로세스를 구동(Delete)함 [2]
+     * - 추방 성공 시 디버그 양식 영역의 기존 텍스트 데이터를 전원 소거 및 가공 상태 원복시킴
+     */
     async function deleteUserByAdmin() {
         if (loggedInUser !== "admin") {
             alert("관리자(admin) 계정만 사용자를 강제로 삭제할 수 있습니다.");
@@ -199,14 +273,14 @@
 
         if (confirm(`정말 관리자 권한으로 [${targetName}] 회원을 강제 삭제하시겠습니까?`)) {
             const res = await fetch(`${host}/api/users/${targetId}?username=${loggedInUser}`, {
-                method: 'DELETE'
+                method: 'DELETE' // 처분 명세 발송 [2]
             });
 
             if (res.ok) {
                 alert(`[${targetName}] 회원이 성공적으로 강제 탈퇴되었습니다.`);
                 document.getElementById('searchName').value = "";
                 document.getElementById('userInfo').innerText = "";
-                clearUpdateForm();
+                clearUpdateForm(); // 공용 폼 완전 초기화
             } else if (res.status === 403) {
                 alert("삭제 권한이 없습니다.");
             } else {
@@ -215,6 +289,14 @@
         }
     }
 
+    /**
+     * 💡 [uploadMedia 기능설명 (Create)]
+     * - 미디어 타이틀 및 선택 물리 파일 객체의 부재 상태를 완전 검증함
+     * - 대용량 이진 데이터 파일(바이너리) 스트림 전송에 최적화된 브라우저 표준 양식 전송 객체 'FormData' 인스턴스를 동적으로 생성함
+     * - 폼 데이터 내부에 텍스트 정보인 제목, 유형, 업로더 계정명 및 바이너리 오리지널 파일 객체를 필드로 빌드 및 적재함 [2]
+     * - 전송 Content-Type 헤더 설정을 일부러 생략하여 브라우저 컴파일러가 직접 boundary 분할 기준 수치를 자동 조율하여 멀티파트 인코딩 헤더를 빌드하게 유도함
+     * - 백엔드 영속 메타 DB에 업로드를 격발(Create)한 뒤, 성공 시 실시간 미디어 뷰 영역을 최신 상태로 갱신함 [2]
+     */
     async function uploadMedia() {
         const title = document.getElementById('mediaTitle').value;
         const type = document.getElementById('mediaType').value;
@@ -225,23 +307,25 @@
             return;
         }
 
+        // [FormData 멀티파트 가공 알고리즘]
         const formData = new FormData();
         formData.append("title", title);
         formData.append("type", type);
-        formData.append("file", fileInput.files[0]);
+        formData.append("file", fileInput.files[0]); // 실시간 바이너리 버퍼 스트림 객체 적재
         formData.append("uploader", loggedInUser);
 
         const res = await fetch(`${host}/api/media/upload`, {
-            method: 'POST',
-            body: formData
+            method: 'POST', // 인스턴스 생성을 의미하는 POST 규격 송신
+            body: formData // Content-Type 헤더 생략을 통해 브라우저가 직접 boundary 합성 빌딩 수행함
         });
 
         if (res.ok) {
             alert("업로드 성공!");
             document.getElementById('mediaTitle').value = "";
             fileInput.value = "";
-            loadMediaList();
+            loadMediaList(); // 목록 데이터 실시간 리패치 알고리즘 작동
         } else if (res.status === 409) {
+            // 동일 동영상 이름 중복 등록 거절 응답 수용
             const errorResult = await res.json();
             alert(errorResult.message);
         } else {
@@ -249,15 +333,24 @@
         }
     }
 
+    /**
+     * 💡 [loadMediaList 기능설명 (Read)]
+     * - DB에 현재 기록 영속 유지 중인 모든 미디어 자원 메타데이터 엔티티 리스트를 획득하기 위해 GET API를 전송함 [2]
+     * - 리스트 수집에 성공하면 화면에 위치한 UL 컨테이너 자식 DOM 노드들을 완전히 파괴소거('innerHTML = ""')하여 누적 출력 버그를 방지함
+     * - 배열 반복 연산 알고리즘(.forEach)을 적용하여, 개별 미디어 엔티티를 나타내는 LI 리스트 요소를 실시간으로 생성함
+     * - 개별 LI 요소 내부에 플레이어 기동(Play), 소유권 기반 이름 개명(Update), 미디어 물리적/가상 완전 처분(Delete) 버튼을 동적으로 장착하여 뷰포트에 밀어 넣음
+     */
     async function loadMediaList() {
         const res = await fetch(`${host}/api/media`);
         const list = await res.json();
         const listEl = document.getElementById('mediaList');
-        listEl.innerHTML = "";
+        listEl.innerHTML = ""; // 기존 잔여 노드 전면 철거
 
+        // 동적 자식 노드 DOM 조작 기법 활용부
         list.forEach(m => {
             const li = document.createElement('li');
             li.style.marginBottom = "5px";
+            // 동적 콜백 연쇄 바인딩 처리 (m.id, m.fileType, m.title 정보 주입)
             li.innerHTML = `
                 [${m.fileType}] <strong id="title-text-${m.id}">${m.title}</strong>
                 <span style="font-size: 0.85em; color: gray;">(업로더: ${m.uploadedBy})</span>
@@ -265,13 +358,21 @@
                 <button onclick="editMediaTitle(${m.id}, '${m.title}')">이름 수정</button>
                 <button onclick="deleteMedia(${m.id})">삭제</button>
             `;
-            listEl.appendChild(li);
+            listEl.appendChild(li); // UL 부모 노드 하위로 동적 적재 완료
         });
     }
 
+    /**
+     * 💡 [editMediaTitle 기능설명 (Update)]
+     * - 브라우저 prompt() 대화 상자를 동적 활성화하여 개명하고자 하는 텍스트 값을 실시간 취득함
+     * - 공백 수정 등의 무결성을 철저히 회피 가드 차단함
+     * - 수정한 신규 타이틀 한글 등이 네트워크 상에서 깨지지 않도록 URI 컴파일링 인코딩('encodeURIComponent')을 거침
+     * - 백엔드 원장 파일 수정을 위해 세션 사용자 ID 와 함께 PUT API 통신을 격발함
+     * - 소유주 본인 계정이거나 최고 권한 admin 계정이 아닐 시, 403 Forbidden 거절 응답을 처리해 비정상 위조 접근을 완전 방어함 [2]
+     */
     async function editMediaTitle(id, currentTitle) {
         const newTitle = prompt("변경하고자 하는 새로운 동영상 제목을 입력하세요:", currentTitle);
-        if (newTitle === null) return;
+        if (newTitle === null) return; // 취소 버튼 격발 시 로직 무부하 종료
 
         const trimmedTitle = newTitle.trim();
         if (trimmedTitle === "") {
@@ -280,29 +381,38 @@
         }
 
         const res = await fetch(`${host}/api/media/${id}?title=${encodeURIComponent(trimmedTitle)}&username=${loggedInUser}`, {
-            method: 'PUT'
+            method: 'PUT' // 자원 데이터 교체 명세 가동
         });
 
         if (res.ok) {
             alert("동영상 제목이 변경되었습니다.");
-            loadMediaList();
+            loadMediaList(); // 실시간 미디어 뷰 영역 동적 동기화
         } else if (res.status === 403) {
+            // 타인 미디어 불법 수정 도모 거절 응답 처리
             alert("수정 권한이 없습니다. (본인이 올린 동영상이거나 admin 계정만 수정 가능합니다)");
         } else {
             alert("동영상 제목 수정에 실패했습니다.");
         }
     }
 
+    /**
+     * 💡 [deleteMedia 기능설명 (Delete)]
+     * - 물리 하드 디스크에서 비디오 이진 자원을 날리고 R2DBC 인덱스를 처분시키는 미디어 완전 소각 루틴임
+     * - 2차 확인용 Confirm 브라우저 모달 대화창을 띄워 실수로 인한 원본 미디어 증발 사고를 미연에 방지함
+     * - 본인 사용자명 정보를 인가 변수 파라미터(?username=)로 동봉 송수신하여 권한 검증을 동반한 DELETE API를 호출함 [2]
+     * - 403 거절 응답 시 비인가 사용자의 악의적인 미디어 탈취 삭제 시도를 전면 파괴 차단함
+     */
     async function deleteMedia(id) {
         if (confirm("정말 이 미디어를 삭제하시겠습니까?")) {
             const res = await fetch(`${host}/api/media/${id}?username=${loggedInUser}`, {
-                method: 'DELETE'
+                method: 'DELETE' // 소멸 전사 통보 명세 가동
             });
 
             if (res.ok) {
                 alert("성공적으로 삭제되었습니다.");
-                loadMediaList();
+                loadMediaList(); // 실시간 목록 동기화 갱신
             } else if (res.status === 403) {
+                // 권한 불일치로 인한 처분 거절 응답 처리
                 alert("삭제 권한이 거부되었습니다. (본인이 업로드한 미디어이거나 admin 계정이어야 합니다)");
             } else {
                 alert("미디어 삭제 처리에 실패하였습니다.");
@@ -310,22 +420,35 @@
         }
     }
 
+    /**
+     * 💡 [playMedia 기능설명 (Stream)]
+     * - 비디오(VIDEO) 혹은 오디오(AUDIO) 자원 성격 코드를 정밀 해독 분석함
+     * - 각 재생 포맷에 타겟 부합하는 브라우저 네이티브 HTML 오디오/비디오 컴포넌트 재생기 노드를 캡처 색인함
+     * - 백엔드에서 제공하는 다이렉트 논블로킹 스트리밍 주소인 '/api/media/stream/{id}' 엔드포인트를 플레이어의 'src'로 다이렉트 연동함 [2]
+     * - 동시 오디오/비디오 소리 중첩 간섭 오류를 막기 위해, 한 미디어가 구동될 때 다른 플레이어를 반드시 일시정지시키고 강제 소멸 숨김 상태 처리함
+     * - '.play()' 함수 격발을 통해 청크 버퍼를 백엔드로부터 지속 공급받아 실시간 다이렉트 스트리밍을 브라우저 스피커/화면으로 출력(Seeking 지원)함 [2]
+     */
     function playMedia(id, type) {
         const videoPlayer = document.getElementById('videoPlayer');
         const audioPlayer = document.getElementById('audioPlayer');
+        /** [streamUrl] 백엔드 바이너리 다이렉트 스트리밍 공급 전용 통로 엔드포인트 타겟 주소임 [2] */
         const streamUrl = `${host}/api/media/stream/${id}`;
 
         if (type === "VIDEO") {
+            // 다른 오디오 재생기 트랙 오버랩 격리 소거
             audioPlayer.style.display = "none";
             audioPlayer.pause();
 
+            // 비디오 플레이어 스트림 원천 주소 교체 및 시현 구동
             videoPlayer.src = streamUrl;
             videoPlayer.style.display = "block";
             videoPlayer.play();
         } else {
+            // 다른 비디오 재생기 트랙 오버랩 격리 소거
             videoPlayer.style.display = "none";
             videoPlayer.pause();
 
+            // 오디오 플레이어 스트림 원천 주소 교체 및 시현 구동
             audioPlayer.src = streamUrl;
             audioPlayer.style.display = "block";
             audioPlayer.play();
