@@ -1,5 +1,5 @@
 package org.example.client
-
+//
 //import org.example.User
 //import org.example.Media
 //import kotlinx.coroutines.reactor.awaitSingle
@@ -45,6 +45,24 @@ package org.example.client
 //        .bodyToMono(User::class.java)
 //        .awaitSingleOrNull()
 //    log.info("  -> Read Result: {}", fetchedUser)
+//
+//
+//    // --------------------------------------------------
+//    // [추가된 CRUD TEST 2-1] Update Gamer User (수정 테스트)
+//    // --------------------------------------------------
+//    log.info("\n>>> [CRUD TEST 2-1] Update Gamer User Information...")
+//    val updatedInfo = User(username = "ShowMaker_Fan_Updated", email = "showmaker.new@gmail.com")
+//    val updatedUser = client.put()
+//        .uri("/api/users/${savedUser.id}") // PUT 수정 API 호출
+//        .contentType(MediaType.APPLICATION_JSON)
+//        .bodyValue(updatedInfo)
+//        .retrieve()
+//        .bodyToMono(User::class.java)
+//        .awaitSingle()
+//    log.info("  -> Updated User Information: {}", updatedUser)
+//
+//
+//
 //
 //    log.info("\n>>> [CRUD TEST 3] Get Media List...")
 //    val mediaList = client.get()

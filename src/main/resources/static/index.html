@@ -8,26 +8,64 @@
         section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
         h2 { margin-top: 0; color: #333; }
         .flex { display: flex; gap: 20px; }
+        input { margin-bottom: 5px; display: block; }
+        button { cursor: pointer; }
+        .auth-bar { background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
 <h1>GG-Shorts 1차 검사 기능 시현</h1>
 
+<!-- 0. 로그인 상태 표시바 및 로그인/힌트 창 -->
+<section>
+    <h2>0. 로그인 및 디버깅 도구</h2>
+    <div id="loginStatus" class="auth-bar">
+        로그인이 필요합니다. (비로그인 상태에서는 업로드/삭제가 제한됩니다)
+    </div>
+    <div class="flex">
+        <!-- 로그인 구역 -->
+        <div>
+            <h3>로그인</h3>
+            <input id="loginName" placeholder="사용자명">
+            <input id="loginPassword" type="password" placeholder="비밀번호">
+            <button onclick="login()">로그인</button>
+        </div>
+        <!-- 비밀번호 디버깅 힌트 구역 -->
+        <div>
+            <h3>디버깅용 비밀번호 힌트</h3>
+            <input id="hintName" placeholder="조회할 사용자명">
+            <button onclick="getPasswordHint()">비밀번호 찾기(힌트)</button>
+        </div>
+    </div>
+</section>
+
 <!-- 1. 유저 CRUD -->
 <section>
     <h2>1. 유저 관리 (CRUD)</h2>
     <div class="flex">
+        <!-- C (Create) -->
         <div>
             <h3>회원 가입 (Create)</h3>
             <input id="regName" placeholder="사용자명">
             <input id="regEmail" placeholder="이메일">
+            <input id="regPassword" type="password" placeholder="비밀번호">
             <button onclick="registerUser()">가입</button>
         </div>
+        <!-- R (Read) -->
         <div>
             <h3>회원 조회 및 검증 (Read)</h3>
             <input id="searchName" placeholder="사용자명 검색">
             <button onclick="getUser()">조회</button>
             <p id="userInfo"></p>
+        </div>
+        <!-- U (Update) -->
+        <div>
+            <h3>회원 정보 수정 (Update)</h3>
+            <input id="updateId" placeholder="회원 ID (조회 시 자동입력)" readonly style="background-color: #eee;">
+            <input id="updateName" placeholder="새 사용자명">
+            <input id="updateEmail" placeholder="새 이메일">
+            <input id="updatePassword" type="password" placeholder="새 비밀번호">
+            <button onclick="updateUser()">수정</button>
         </div>
     </div>
 </section>
@@ -38,7 +76,7 @@
     <div class="flex">
         <div>
             <h3>미디어 업로드 (Create)</h3>
-            <input id="mediaTitle" placeholder="제목"><br><br>
+            <input id="mediaTitle" placeholder="제목"><br>
             Type:
             <select id="mediaType">
                 <option value="VIDEO">VIDEO (비디오)</option>
@@ -62,42 +100,173 @@
 
 <script>
     const host = "http://localhost:8080";
+    let loggedInUser = null; // 현재 브라우저 세션에 로그인한 사용자 상태 기록
 
-    // 유저 가입
+    // [0] 로그인 기능 구현
+    async function login() {
+        const username = document.getElementById('loginName').value;
+        const password = document.getElementById('loginPassword').value;
+
+        if (!username || !password) {
+            alert("사용자명과 비밀번호를 모두 입력해 주세요.");
+            return;
+        }
+
+        // admin 계정은 데이터베이스에 없어도 임시로 바로 우회 로그인될 수 있게 배려
+        if (username === "admin" && password === "admin") {
+            loggedInUser = "admin";
+            updateLoginState();
+            alert("관리자(admin) 권한으로 로그인 되었습니다.");
+            return;
+        }
+
+        const res = await fetch(`${host}/api/users/${username}`);
+        if (res.ok) {
+            const user = await res.json();
+            if (user.password === password) {
+                loggedInUser = user.username;
+                updateLoginState();
+                alert(`${loggedInUser}님 환영합니다!`);
+            } else {
+                alert("비밀번호가 일치하지 않습니다.");
+            }
+        } else {
+            alert("존재하지 않는 사용자명입니다.");
+        }
+    }
+
+    // 로그아웃
+    function logout() {
+        loggedInUser = null;
+        updateLoginState();
+        alert("로그아웃 되었습니다.");
+    }
+
+    // 로그인 인터페이스 동적 변경
+    function updateLoginState() {
+        const statusEl = document.getElementById('loginStatus');
+        if (loggedInUser) {
+            statusEl.innerHTML = `현재 로그인 사용자: <span style="color: green;">${loggedInUser}</span>
+                                 <button onclick="logout()" style="margin-left: 10px;">로그아웃</button>`;
+        } else {
+            statusEl.innerHTML = `로그인이 필요합니다. (비로그인 상태에서는 업로드/삭제가 제한됩니다)`;
+        }
+    }
+
+    // 디버깅 힌트 조회 (API를 찔러 사용자의 비밀번호 획득)
+    async function getPasswordHint() {
+        const username = document.getElementById('hintName').value;
+        if (!username) {
+            alert("비밀번호를 알아낼 사용자명을 입력해 주세요.");
+            return;
+        }
+        const res = await fetch(`${host}/api/users/${username}`);
+        if (res.ok) {
+            const user = await res.json();
+            alert(`[디버깅 힌트] ${username}님의 비밀번호는 "${user.password}" 입니다.`);
+        } else {
+            alert("존재하지 않는 회원입니다.");
+        }
+    }
+
+    // [C] 유저 가입 (Create)
     async function registerUser() {
         const username = document.getElementById('regName').value;
         const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+        if (!username || !email || !password) {
+            alert("사용자명, 이메일, 비밀번호를 모두 입력해주세요.");
+            return;
+        }
         const res = await fetch(`${host}/api/users/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, email })
+            body: JSON.stringify({ username, email, password })
         });
-        if (res.ok) alert("가입 성공!");
+        if (res.ok) {
+            alert("가입 성공!");
+            document.getElementById('regName').value = "";
+            document.getElementById('regEmail').value = "";
+            document.getElementById('regPassword').value = "";
+        }
     }
 
-    // 유저 조회
+    // [R] 유저 조회 (Read)
     async function getUser() {
         const username = document.getElementById('searchName').value;
         const res = await fetch(`${host}/api/users/${username}`);
         const infoText = document.getElementById('userInfo');
+
         if (res.ok) {
             const user = await res.json();
             infoText.innerText = `ID: ${user.id} / Name: ${user.username} / Email: ${user.email}`;
+
+            document.getElementById('updateId').value = user.id;
+            document.getElementById('updateName').value = user.username;
+            document.getElementById('updateEmail').value = user.email;
+            document.getElementById('updatePassword').value = user.password;
         } else {
             infoText.innerText = "사용자를 찾을 수 없습니다.";
+            document.getElementById('updateId').value = "";
+            document.getElementById('updateName').value = "";
+            document.getElementById('updateEmail').value = "";
+            document.getElementById('updatePassword').value = "";
         }
     }
 
-    // 미디어 업로드
+    // [U] 유저 정보 수정 (Update)
+    async function updateUser() {
+        const id = document.getElementById('updateId').value;
+        const username = document.getElementById('updateName').value;
+        const email = document.getElementById('updateEmail').value;
+        const password = document.getElementById('updatePassword').value;
+
+        if (!id) {
+            alert("수정할 회원의 ID가 필요합니다. 회원을 먼저 조회해 주세요!");
+            return;
+        }
+        if (!username || !email || !password) {
+            alert("수정할 모든 정보(이름, 이메일, 패스워드)를 입력해 주세요.");
+            return;
+        }
+
+        const res = await fetch(`${host}/api/users/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password })
+        });
+
+        if (res.ok) {
+            alert("회원 정보 수정 성공!");
+            document.getElementById('searchName').value = username;
+            getUser();
+        } else {
+            alert("회원 정보 수정 실패!");
+        }
+    }
+
+    // [C] 미디어 업로드 (Create)
     async function uploadMedia() {
+        if (!loggedInUser) {
+            alert("로그인 세션이 존재하지 않습니다. 먼저 로그인해 주세요.");
+            return;
+        }
+
         const title = document.getElementById('mediaTitle').value;
         const type = document.getElementById('mediaType').value;
         const fileInput = document.getElementById('mediaFile');
+
+        if (!title || !fileInput.files[0]) {
+            alert("제목과 파일을 모두 입력해 주세요.");
+            return;
+        }
 
         const formData = new FormData();
         formData.append("title", title);
         formData.append("type", type);
         formData.append("file", fileInput.files[0]);
+        // 업로드 파일 전송 시 로그인된 사용자의 ID를 함께 담아서 보냅니다.
+        formData.append("uploader", loggedInUser);
 
         const res = await fetch(`${host}/api/media/upload`, {
             method: 'POST',
@@ -105,11 +274,13 @@
         });
         if (res.ok) {
             alert("업로드 성공!");
+            document.getElementById('mediaTitle').value = "";
+            fileInput.value = "";
             loadMediaList();
         }
     }
 
-    // 미디어 목록 불러오기
+    // [R] 미디어 목록 불러오기 (Read)
     async function loadMediaList() {
         const res = await fetch(`${host}/api/media`);
         const list = await res.json();
@@ -118,8 +289,9 @@
 
         list.forEach(m => {
             const li = document.createElement('li');
+            // 어떤 사용자가 올린 파일인지 UI에 꼬리표를 표출합니다.
             li.innerHTML = `
-                [${m.fileType}] ${m.title}
+                [${m.fileType}] ${m.title} <span style="font-size: 0.85em; color: gray;">(업로더: ${m.uploadedBy})</span>
                 <button onclick="playMedia(${m.id}, '${m.fileType}')">재생</button>
                 <button onclick="deleteMedia(${m.id})">삭제</button>
             `;
@@ -127,13 +299,30 @@
         });
     }
 
-    // 미디어 삭제
+    // [D] 미디어 삭제 (Delete - 현재 로그인된 사용자 검증 수행)
     async function deleteMedia(id) {
-        await fetch(`${host}/api/media/${id}`, { method: 'DELETE' });
-        loadMediaList();
+        if (!loggedInUser) {
+            alert("삭제 작업을 진행하려면 로그인이 필요합니다.");
+            return;
+        }
+
+        if (confirm("정말 이 미디어를 삭제하시겠습니까?")) {
+            const res = await fetch(`${host}/api/media/${id}?username=${loggedInUser}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                alert("성공적으로 삭제되었습니다.");
+                loadMediaList();
+            } else if (res.status === 403) {
+                alert("삭제 권한이 거부되었습니다. (본인이 업로드한 미디어이거나 admin 계정이어야 합니다)");
+            } else {
+                alert("미디어 삭제 처리에 실패하였습니다.");
+            }
+        }
     }
 
-    // 미디어 스트리밍 재생
+    // [Stream] 미디어 스트리밍 재생
     function playMedia(id, type) {
         const videoPlayer = document.getElementById('videoPlayer');
         const audioPlayer = document.getElementById('audioPlayer');
@@ -156,7 +345,6 @@
         }
     }
 
-    // 초기 목록 로드
     loadMediaList();
 </script>
 </body>
